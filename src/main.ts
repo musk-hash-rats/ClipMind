@@ -1,5 +1,5 @@
 import "./styles.css";
-import type { CaptureState, ClipRecord, ClipType, SourceConfidence, WorkSession } from "./domain";
+import type { AuditEvent, CaptureState, ClipRecord, ClipType, SourceConfidence, WorkSession } from "./domain";
 import { sampleClips, sampleSessions } from "./sample-data";
 
 type ClipFilter = "all" | ClipType;
@@ -11,6 +11,8 @@ type AppState = {
   captureState: CaptureState;
   previewRevealed: boolean;
   statusNote: string;
+  auditEvents: AuditEvent[];
+  wipedClipIds: string[];
 };
 
 const typeIcon: Record<ClipType, string> = {
@@ -61,7 +63,9 @@ let state: AppState = {
   filter: "all",
   captureState: sampleSessions[0]?.captureState ?? "paused",
   previewRevealed: false,
-  statusNote: "Ready"
+  statusNote: "Ready",
+  auditEvents: [],
+  wipedClipIds: []
 };
 
 const formatDateTime = (iso: string) =>
@@ -70,7 +74,9 @@ const formatDateTime = (iso: string) =>
     timeStyle: "short"
   });
 
-const getSessionClips = (sessionId: string) => sampleClips.filter((clip) => clip.sessionId === sessionId);
+const getAvailableClips = () => sampleClips.filter((clip) => !state.wipedClipIds.includes(clip.id));
+
+const getSessionClips = (sessionId: string) => getAvailableClips().filter((clip) => clip.sessionId === sessionId);
 
 const getVisibleClips = () =>
   getSessionClips(state.activeSessionId).filter((clip) => state.filter === "all" || clip.type === state.filter);
@@ -79,7 +85,10 @@ const getActiveSession = () =>
   sampleSessions.find((session) => session.id === state.activeSessionId) ?? sampleSessions[0];
 
 const getSelectedClip = () =>
-  sampleClips.find((clip) => clip.id === state.selectedClipId) ?? getVisibleClips()[0] ?? sampleClips[0];
+  getAvailableClips().find((clip) => clip.id === state.selectedClipId) ??
+  getVisibleClips()[0] ??
+  getAvailableClips()[0] ??
+  sampleClips[0];
 
 const isPrivateMetadataHidden = (clip: ClipRecord) =>
   clip.privacy.sensitive && clip.privacy.masked && !(clip.id === state.selectedClipId && state.previewRevealed);
@@ -122,6 +131,21 @@ const getPreviewText = (clip: ClipRecord) => {
 
   return clip.content.safePreview;
 };
+
+const createAuditEvent = (
+  type: AuditEvent["type"],
+  summary: string,
+  targetId?: string,
+  metadata?: AuditEvent["metadata"]
+): AuditEvent => ({
+  id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  type,
+  createdAt: new Date().toISOString(),
+  actor: "local-user",
+  targetId,
+  summary,
+  metadata
+});
 
 const setState = (patch: Partial<AppState>) => {
   state = { ...state, ...patch };
@@ -224,6 +248,28 @@ const renderPreview = (clip: ClipRecord) => {
   `;
 };
 
+const renderAuditTrail = () => {
+  if (state.auditEvents.length === 0) {
+    return `<p class="audit-empty">No security events in this session yet</p>`;
+  }
+
+  return `
+    <ol class="audit-list">
+      ${state.auditEvents
+        .slice(0, 4)
+        .map(
+          (event) => `
+            <li>
+              <strong>${escapeHtml(event.summary)}</strong>
+              <small>${escapeHtml(formatDateTime(event.createdAt))}</small>
+            </li>
+          `
+        )
+        .join("")}
+    </ol>
+  `;
+};
+
 const render = () => {
   const activeSession = getActiveSession();
   const selectedClip = getSelectedClip();
@@ -300,22 +346,13 @@ const render = () => {
 
         <section>
           <h2>Agent Handoff</h2>
-          <button
-            class="primary-action full"
-            type="button"
-            title="Disabled until export confirmation and audit events are implemented"
-            disabled
-          >
-            Export Locked
-          </button>
-          <button
-            class="danger-action full"
-            type="button"
-            title="Disabled until scoped wipe confirmation is implemented"
-            disabled
-          >
-            Panic Wipe Locked
-          </button>
+          <button class="primary-action full" type="button" data-action="export">Export Selected</button>
+          <button class="danger-action full" type="button" data-action="panic">Panic Wipe Clip</button>
+        </section>
+
+        <section>
+          <h2>Audit Trail</h2>
+          ${renderAuditTrail()}
         </section>
       </aside>
     </main>
@@ -374,6 +411,64 @@ app.addEventListener("click", (event) => {
     setState({
       previewRevealed: !state.previewRevealed,
       statusNote: state.previewRevealed ? "preview masked" : "preview revealed"
+    });
+    return;
+  }
+
+  if (actionButton?.dataset.action === "export") {
+    const selectedClip = getSelectedClip();
+
+    if (isPrivateMetadataHidden(selectedClip)) {
+      setState({ statusNote: "reveal masked clip before export" });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Export selected clip to agent handoff?\n\nClip: ${selectedClip.title}\nScope: selected clip only\nIncluded: safe preview, source label, session, timestamp\nAudit: export event will be recorded`
+    );
+
+    if (!confirmed) {
+      setState({ statusNote: "export canceled" });
+      return;
+    }
+
+    setState({
+      auditEvents: [
+        createAuditEvent("agent-export-created", `Exported selected clip: ${selectedClip.title}`, selectedClip.id, {
+          clipCount: 1,
+          maskedAtExport: selectedClip.privacy.masked && !state.previewRevealed,
+          destination: "agent handoff"
+        }),
+        ...state.auditEvents
+      ],
+      statusNote: "export audited"
+    });
+    return;
+  }
+
+  if (actionButton?.dataset.action === "panic") {
+    const selectedClip = getSelectedClip();
+    const confirmation = window.prompt(
+      `Panic wipe is scoped to this selected ClipMind clip only:\n\n${selectedClip.title}\n\nType WIPE to remove it from this local session.`
+    );
+
+    if (confirmation !== "WIPE") {
+      setState({ statusNote: "panic wipe canceled" });
+      return;
+    }
+
+    setState({
+      wipedClipIds: [...state.wipedClipIds, selectedClip.id],
+      previewRevealed: false,
+      captureState: "paused",
+      auditEvents: [
+        createAuditEvent("panic-wipe-completed", `Panic wiped selected clip: ${selectedClip.title}`, selectedClip.id, {
+          scope: "selected-clip",
+          sessionId: selectedClip.sessionId
+        }),
+        ...state.auditEvents
+      ],
+      statusNote: "selected clip wiped"
     });
     return;
   }

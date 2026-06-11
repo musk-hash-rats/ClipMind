@@ -575,6 +575,42 @@ h2 {
   line-height: 1;
 }
 
+.audit-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.audit-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.audit-list li {
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.audit-list strong,
+.audit-list small {
+  display: block;
+}
+
+.audit-list strong {
+  font-size: 13px;
+}
+
+.audit-list small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 @media (max-width: 1060px) {
   .shell {
     grid-template-columns: 224px minmax(320px, 1fr);
