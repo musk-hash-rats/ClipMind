@@ -35,9 +35,23 @@ Applicable frameworks and rules:
 - ISO/IEC 12207, 25010, 29119, 27034, 27001, 27002, 27017, 27018, 27701.
 - ISO 9241, WCAG 2.2, W3C HTML/CSS/accessibility/semantic markup.
 - Apple Security Guidelines.
+- Google Android Security Best Practices.
 - Local engineering rules: security by default, privacy by default, finish before expanding, maintainable code, decision docs, important testing, quality over quantity, no ego development, user trust, and leave it better than found.
 
 Studio motto: Creative by nature. Secure by design. Built to last.
+
+Engineering rules:
+
+1. Security by default: every feature must assume it may be attacked.
+2. Privacy by default: collect the minimum user data required.
+3. Finish before expanding: complete core functionality before adding extras.
+4. Maintainable code: another developer should understand it six months later.
+5. Document important decisions: architecture, workflows, and design choices need a trail.
+6. Test everything important: critical systems require automated or documented testing.
+7. Quality over quantity: a few polished products beat many unfinished ones.
+8. No ego development: the best solution wins, regardless of who proposed it.
+9. Respect the user: never knowingly ship software that harms security, privacy, or trust.
+10. Leave it better than you found it: every commit should improve the product, codebase, or documentation.
 
 ## Coding Standards Gate
 
