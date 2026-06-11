@@ -81,13 +81,23 @@ const getActiveSession = () =>
 const getSelectedClip = () =>
   sampleClips.find((clip) => clip.id === state.selectedClipId) ?? getVisibleClips()[0] ?? sampleClips[0];
 
-const getOrigin = (clip: ClipRecord) =>
-  clip.source.url ??
-  clip.source.filePath ??
-  clip.source.sender ??
-  clip.source.fallbackReason ??
-  clip.source.windowTitle ??
-  "Unknown origin";
+const isPrivateMetadataHidden = (clip: ClipRecord) =>
+  clip.privacy.sensitive && clip.privacy.masked && !(clip.id === state.selectedClipId && state.previewRevealed);
+
+const getOrigin = (clip: ClipRecord) => {
+  if (isPrivateMetadataHidden(clip)) {
+    return "Sensitive origin hidden";
+  }
+
+  return (
+    clip.source.url ??
+    clip.source.filePath ??
+    clip.source.sender ??
+    clip.source.fallbackReason ??
+    clip.source.windowTitle ??
+    "Unknown origin"
+  );
+};
 
 const getClipBadges = (clip: ClipRecord) => [
   clip.source.capturedVia,
@@ -290,8 +300,22 @@ const render = () => {
 
         <section>
           <h2>Agent Handoff</h2>
-          <button class="primary-action full" type="button" data-action="export">Export Selected</button>
-          <button class="danger-action full" type="button" data-action="panic">Panic Wipe</button>
+          <button
+            class="primary-action full"
+            type="button"
+            title="Disabled until export confirmation and audit events are implemented"
+            disabled
+          >
+            Export Locked
+          </button>
+          <button
+            class="danger-action full"
+            type="button"
+            title="Disabled until scoped wipe confirmation is implemented"
+            disabled
+          >
+            Panic Wipe Locked
+          </button>
         </section>
       </aside>
     </main>
@@ -351,16 +375,6 @@ app.addEventListener("click", (event) => {
       previewRevealed: !state.previewRevealed,
       statusNote: state.previewRevealed ? "preview masked" : "preview revealed"
     });
-    return;
-  }
-
-  if (actionButton?.dataset.action === "panic") {
-    setState({ statusNote: "panic wipe confirmation pending" });
-    return;
-  }
-
-  if (actionButton?.dataset.action === "export") {
-    setState({ statusNote: "agent export staged" });
     return;
   }
 
