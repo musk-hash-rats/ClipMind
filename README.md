@@ -1,13 +1,28 @@
 # ClipMind Desktop
 
-ClipMind is a macOS and Windows desktop app for encrypted clipboard working memory.
+ClipMind is a macOS and Windows desktop app for encrypted clipboard working memory. It ships as native desktop software, not as a hosted web app.
 
 ## Status
 
-- Stack: Tauri v2 + TypeScript UI.
+- Stack: Tauri v2 native shell + Rust backend + TypeScript UI.
 - Target: macOS and Windows desktop first.
 - Current state: scaffolded repo, interactive consumer UI shell, native command stubs.
 - Blocker: Rust/Cargo is not installed in this workspace, so Tauri builds cannot run here yet.
+
+## Desktop Deliverables
+
+The product target is installable desktop software:
+
+- macOS: `.dmg`
+- Windows: `.exe` installer
+
+The TypeScript files are the app's desktop UI layer, rendered inside the Tauri native shell. The release artifacts are produced by the Tauri build pipeline, not by deploying the Vite dev server.
+
+This Linux OpenClaw host can run the frontend dev server for quick preview, but it cannot produce the final macOS `.dmg` or Windows `.exe` locally. Those installers should be built on their native platforms, or through the GitHub Actions workflow in:
+
+```text
+.github/workflows/desktop-installers.yml
+```
 
 ## Setup
 
@@ -30,6 +45,14 @@ npm run tauri:dev
 npm run typecheck
 npm run build
 ```
+
+5. Build native installers on the matching OS:
+
+```bash
+npm run tauri:build
+```
+
+On GitHub, run the `Desktop installers` workflow manually or push a `v*` tag. The workflow uploads separate macOS and Windows installer artifacts.
 
 ## Product Contract
 
