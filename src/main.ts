@@ -36,6 +36,19 @@ const filterLabels: Array<{ id: ClipFilter; label: string }> = [
   { id: "file", label: "Files" }
 ];
 
+const escapeHtml = (value: string | number | boolean | undefined) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+
+    return entities[char] ?? char;
+  });
+
 const app = document.querySelector<HTMLDivElement>("#app");
 
 if (!app) {
@@ -118,13 +131,13 @@ const renderSessions = () =>
       const count = getSessionClips(session.id).length || session.clipCount;
 
       return `
-        <button class="session ${session.id === state.activeSessionId ? "active" : ""}" type="button" data-session-id="${session.id}">
+        <button class="session ${session.id === state.activeSessionId ? "active" : ""}" type="button" data-session-id="${escapeHtml(session.id)}">
           <span class="session-icon">${getSessionIcon(session)}</span>
           <span class="session-copy">
-            <strong>${session.title}</strong>
-            <small>${session.captureState} · ${session.defaultPrivacy.masked ? "masked" : "visible"} default</small>
+            <strong>${escapeHtml(session.title)}</strong>
+            <small>${escapeHtml(session.captureState)} · ${session.defaultPrivacy.masked ? "masked" : "visible"} default</small>
           </span>
-          <b>${count}</b>
+          <b>${escapeHtml(count)}</b>
         </button>
       `;
     })
@@ -153,16 +166,16 @@ const renderClips = () => {
       const badges = getClipBadges(clip);
 
       return `
-        <article class="clip ${clip.id === state.selectedClipId ? "selected" : ""}" data-clip-id="${clip.id}">
+        <article class="clip ${clip.id === state.selectedClipId ? "selected" : ""}" data-clip-id="${escapeHtml(clip.id)}">
           <div class="clip-type ${clip.type}">${typeIcon[clip.type]}</div>
           <div class="clip-body">
-            <h3>${clip.title}</h3>
-            <p>${getPreviewText(clip)}</p>
+            <h3>${escapeHtml(clip.title)}</h3>
+            <p>${escapeHtml(getPreviewText(clip))}</p>
             <div class="clip-meta">
-              <span>${clip.source.appName}</span>
-              <span>${getOrigin(clip)}</span>
-              <span>${formatDateTime(clip.createdAt)}</span>
-              ${badges.map((badge) => `<span class="tag">${badge}</span>`).join("")}
+              <span>${escapeHtml(clip.source.appName)}</span>
+              <span>${escapeHtml(getOrigin(clip))}</span>
+              <span>${escapeHtml(formatDateTime(clip.createdAt))}</span>
+              ${badges.map((badge) => `<span class="tag">${escapeHtml(badge)}</span>`).join("")}
             </div>
           </div>
           <div class="clip-actions">
@@ -185,13 +198,13 @@ const renderPreview = (clip: ClipRecord) => {
       <div class="preview-head">
         <div>
           <h2>Selected Clip</h2>
-          <strong>${clip.title}</strong>
+          <strong>${escapeHtml(clip.title)}</strong>
           <small>Meaning match · ${clip.source.confidence === "high" ? "92%" : "78%"}</small>
         </div>
         <span class="badge">${isMasked ? "Masked" : "Visible"}</span>
       </div>
 
-      <div class="${previewClass}">${getPreviewText(clip)}</div>
+      <div class="${previewClass}">${escapeHtml(getPreviewText(clip))}</div>
       ${
         clip.privacy.masked
           ? `<button class="quiet-action full" type="button" data-action="toggle-preview">${revealLabel}</button>`
@@ -236,8 +249,8 @@ const render = () => {
           <div class="capture-state">
             <span class="capture-dot"></span>
             <div>
-              <strong>${captureLabel}</strong>
-              <small>${selectedClip.source.deviceId} · ${selectedClip.source.appName} · ${state.statusNote}</small>
+              <strong>${escapeHtml(captureLabel)}</strong>
+              <small>${escapeHtml(selectedClip.source.deviceId)} · ${escapeHtml(selectedClip.source.appName)} · ${escapeHtml(state.statusNote)}</small>
             </div>
           </div>
           <button class="capture-toggle" type="button" data-action="toggle-capture">
@@ -256,9 +269,9 @@ const render = () => {
         <section>
           <h2>Source Memory</h2>
           <dl class="meta-list">
-            <div><dt>Source</dt><dd>${selectedClip.source.appName}</dd></div>
-            <div><dt>Origin</dt><dd>${getOrigin(selectedClip)}</dd></div>
-            <div><dt>Session</dt><dd>${activeSession.title}</dd></div>
+            <div><dt>Source</dt><dd>${escapeHtml(selectedClip.source.appName)}</dd></div>
+            <div><dt>Origin</dt><dd>${escapeHtml(getOrigin(selectedClip))}</dd></div>
+            <div><dt>Session</dt><dd>${escapeHtml(activeSession.title)}</dd></div>
             <div><dt>Confidence</dt><dd>${confidenceLabel[selectedClip.source.confidence]}</dd></div>
           </dl>
         </section>
