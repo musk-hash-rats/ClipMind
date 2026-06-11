@@ -81,6 +81,9 @@ Project architecture notes:
 - `docs/security-storage.md`
 - `docs/clipboard-session-contract.md`
 - `docs/standards-compliance.md`
+- `docs/threat-model.md`
+- `docs/release-security-checklist.md`
+- `SECURITY.md`
 
 ## Initial Ownership
 
