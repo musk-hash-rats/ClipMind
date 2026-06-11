@@ -1,0 +1,22 @@
+[package]
+name = "clipmind"
+version = "0.1.0"
+description = "Encrypted clipboard working memory for macOS and Windows"
+authors = ["RatStreet Studios"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "clipmind_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
