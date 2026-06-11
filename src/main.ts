@@ -1,10 +1,18 @@
 import "./styles.css";
+import { invoke } from "@tauri-apps/api/core";
 import type { AuditEvent, CaptureState, ClipRecord, ClipType, SourceConfidence, WorkSession } from "./domain";
-import { sampleClips, sampleSessions } from "./sample-data";
 
 type ClipFilter = "all" | ClipType;
 
+type NativeState = {
+  sessions: WorkSession[];
+  clips: ClipRecord[];
+  auditEvents: AuditEvent[];
+};
+
 type AppState = {
+  sessions: WorkSession[];
+  clips: ClipRecord[];
   activeSessionId: string;
   selectedClipId: string;
   filter: ClipFilter;
@@ -12,7 +20,7 @@ type AppState = {
   previewRevealed: boolean;
   statusNote: string;
   auditEvents: AuditEvent[];
-  wipedClipIds: string[];
+  nativeReady: boolean;
 };
 
 const typeIcon: Record<ClipType, string> = {
@@ -58,14 +66,16 @@ if (!app) {
 }
 
 let state: AppState = {
-  activeSessionId: sampleSessions[0]?.id ?? "",
-  selectedClipId: sampleClips[0]?.id ?? "",
+  sessions: [],
+  clips: [],
+  activeSessionId: "",
+  selectedClipId: "",
   filter: "all",
-  captureState: sampleSessions[0]?.captureState ?? "paused",
+  captureState: "paused",
   previewRevealed: false,
-  statusNote: "Ready",
+  statusNote: "Loading native store",
   auditEvents: [],
-  wipedClipIds: []
+  nativeReady: false
 };
 
 const formatDateTime = (iso: string) =>
@@ -74,7 +84,28 @@ const formatDateTime = (iso: string) =>
     timeStyle: "short"
   });
 
-const getAvailableClips = () => sampleClips.filter((clip) => !state.wipedClipIds.includes(clip.id));
+const applyNativeState = (nativeState: NativeState, statusNote: string) => {
+  const activeSession = nativeState.sessions.find((session) => session.id === state.activeSessionId) ?? nativeState.sessions[0];
+  const selectedClip = nativeState.clips.find((clip) => clip.id === state.selectedClipId) ?? nativeState.clips[0];
+
+  setState({
+    sessions: nativeState.sessions,
+    clips: nativeState.clips,
+    auditEvents: nativeState.auditEvents,
+    activeSessionId: activeSession?.id ?? "",
+    selectedClipId: selectedClip?.id ?? "",
+    captureState: activeSession?.captureState ?? "paused",
+    nativeReady: true,
+    statusNote
+  });
+};
+
+const invokeNativeState = async (command: string, args?: Record<string, unknown>) => {
+  const nativeState = await invoke<NativeState>(command, args);
+  return nativeState;
+};
+
+const getAvailableClips = () => state.clips;
 
 const getSessionClips = (sessionId: string) => getAvailableClips().filter((clip) => clip.sessionId === sessionId);
 
@@ -82,13 +113,12 @@ const getVisibleClips = () =>
   getSessionClips(state.activeSessionId).filter((clip) => state.filter === "all" || clip.type === state.filter);
 
 const getActiveSession = () =>
-  sampleSessions.find((session) => session.id === state.activeSessionId) ?? sampleSessions[0];
+  state.sessions.find((session) => session.id === state.activeSessionId) ?? state.sessions[0];
 
 const getSelectedClip = () =>
   getAvailableClips().find((clip) => clip.id === state.selectedClipId) ??
   getVisibleClips()[0] ??
-  getAvailableClips()[0] ??
-  sampleClips[0];
+  getAvailableClips()[0];
 
 const isPrivateMetadataHidden = (clip: ClipRecord) =>
   clip.privacy.sensitive && clip.privacy.masked && !(clip.id === state.selectedClipId && state.previewRevealed);
@@ -132,21 +162,6 @@ const getPreviewText = (clip: ClipRecord) => {
   return clip.content.safePreview;
 };
 
-const createAuditEvent = (
-  type: AuditEvent["type"],
-  summary: string,
-  targetId?: string,
-  metadata?: AuditEvent["metadata"]
-): AuditEvent => ({
-  id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  type,
-  createdAt: new Date().toISOString(),
-  actor: "local-user",
-  targetId,
-  summary,
-  metadata
-});
-
 const setState = (patch: Partial<AppState>) => {
   state = { ...state, ...patch };
 
@@ -160,7 +175,9 @@ const setState = (patch: Partial<AppState>) => {
 };
 
 const renderSessions = () =>
-  sampleSessions
+  state.sessions.length === 0
+    ? `<div class="empty-state">Native store unavailable</div>`
+    : state.sessions
     .map((session) => {
       const count = getSessionClips(session.id).length || session.clipCount;
 
@@ -222,7 +239,23 @@ const renderClips = () => {
     .join("");
 };
 
-const renderPreview = (clip: ClipRecord) => {
+const renderPreview = (clip: ClipRecord | undefined) => {
+  if (!clip) {
+    return `
+      <section class="preview-panel">
+        <div class="preview-head">
+          <div>
+            <h2>Selected Clip</h2>
+            <strong>No clip selected</strong>
+            <small>Capture clipboard text to begin</small>
+          </div>
+          <span class="badge">Empty</span>
+        </div>
+        <div class="masked-preview">No local ClipMind data is loaded yet.</div>
+      </section>
+    `;
+  }
+
   const isMasked = clip.privacy.masked && !state.previewRevealed;
   const previewClass = isMasked ? "masked-preview" : "revealed-preview";
   const revealLabel = state.previewRevealed ? "Mask Preview" : "Reveal Preview";
@@ -274,7 +307,11 @@ const render = () => {
   const activeSession = getActiveSession();
   const selectedClip = getSelectedClip();
   const captureActive = state.captureState === "active";
-  const captureLabel = captureActive ? `Capturing to ${activeSession.title}` : "Capture Paused";
+  const activeSessionTitle = activeSession?.title ?? "No Session";
+  const captureLabel = captureActive ? `Capturing to ${activeSessionTitle}` : "Capture Paused";
+  const sourceSummary = selectedClip
+    ? `${selectedClip.source.deviceId} · ${selectedClip.source.appName}`
+    : `local-desktop · ${state.nativeReady ? "waiting for clipboard" : "native store offline"}`;
 
   app.innerHTML = `
     <main class="shell" aria-label="ClipMind desktop app">
@@ -306,13 +343,14 @@ const render = () => {
             <span class="capture-dot"></span>
             <div>
               <strong>${escapeHtml(captureLabel)}</strong>
-              <small>${escapeHtml(selectedClip.source.deviceId)} · ${escapeHtml(selectedClip.source.appName)} · ${escapeHtml(state.statusNote)}</small>
+              <small>${escapeHtml(sourceSummary)} · ${escapeHtml(state.statusNote)}</small>
             </div>
           </div>
           <button class="capture-toggle" type="button" data-action="toggle-capture">
             <span>Capture</span>
             <span class="switch" aria-hidden="true"></span>
           </button>
+          <button class="quiet-action" type="button" data-action="capture-now">Capture Clipboard</button>
         </div>
 
         <div class="mode-row" aria-label="Clip filters">${renderFilters()}</div>
@@ -325,10 +363,10 @@ const render = () => {
         <section>
           <h2>Source Memory</h2>
           <dl class="meta-list">
-            <div><dt>Source</dt><dd>${escapeHtml(selectedClip.source.appName)}</dd></div>
-            <div><dt>Origin</dt><dd>${escapeHtml(getOrigin(selectedClip))}</dd></div>
-            <div><dt>Session</dt><dd>${escapeHtml(activeSession.title)}</dd></div>
-            <div><dt>Confidence</dt><dd>${confidenceLabel[selectedClip.source.confidence]}</dd></div>
+            <div><dt>Source</dt><dd>${escapeHtml(selectedClip?.source.appName ?? "None")}</dd></div>
+            <div><dt>Origin</dt><dd>${selectedClip ? escapeHtml(getOrigin(selectedClip)) : "None"}</dd></div>
+            <div><dt>Session</dt><dd>${escapeHtml(activeSessionTitle)}</dd></div>
+            <div><dt>Confidence</dt><dd>${selectedClip ? confidenceLabel[selectedClip.source.confidence] : "None"}</dd></div>
           </dl>
         </section>
 
@@ -369,7 +407,7 @@ app.addEventListener("click", (event) => {
 
   if (sessionButton) {
     const activeSessionId = sessionButton.dataset.sessionId ?? state.activeSessionId;
-    const session = sampleSessions.find((item) => item.id === activeSessionId);
+    const session = state.sessions.find((item) => item.id === activeSessionId);
 
     setState({
       activeSessionId,
@@ -400,23 +438,73 @@ app.addEventListener("click", (event) => {
   }
 
   if (actionButton?.dataset.action === "toggle-capture") {
-    setState({
-      captureState: state.captureState === "active" ? "paused" : "active",
-      statusNote: state.captureState === "active" ? "capture paused" : "capture active"
-    });
+    if (!state.activeSessionId) {
+      setState({ statusNote: "native session unavailable" });
+      return;
+    }
+
+    const captureState = state.captureState === "active" ? "paused" : "active";
+    void (async () => {
+      try {
+        const nativeState = await invokeNativeState("set_capture_state", {
+          sessionId: state.activeSessionId,
+          captureState
+        });
+        applyNativeState(nativeState, captureState === "active" ? "capture active" : "capture paused");
+      } catch (error) {
+        setState({ statusNote: `native capture state failed: ${String(error)}` });
+      }
+    })();
     return;
   }
 
   if (actionButton?.dataset.action === "toggle-preview") {
-    setState({
-      previewRevealed: !state.previewRevealed,
-      statusNote: state.previewRevealed ? "preview masked" : "preview revealed"
-    });
+    const selectedClip = getSelectedClip();
+    if (!selectedClip) {
+      setState({ statusNote: "no clip selected" });
+      return;
+    }
+
+    if (state.previewRevealed) {
+      setState({ previewRevealed: false, statusNote: "preview masked" });
+      return;
+    }
+
+    void (async () => {
+      try {
+        const nativeState = await invokeNativeState("reveal_clip", { clipId: selectedClip.id });
+        applyNativeState(nativeState, "preview revealed and audited");
+        setState({ previewRevealed: true });
+      } catch (error) {
+        setState({ statusNote: `native reveal failed: ${String(error)}` });
+      }
+    })();
+    return;
+  }
+
+  if (actionButton?.dataset.action === "capture-now") {
+    if (!state.activeSessionId) {
+      setState({ statusNote: "native session unavailable" });
+      return;
+    }
+
+    void (async () => {
+      try {
+        const nativeState = await invokeNativeState("capture_clipboard_text", { sessionId: state.activeSessionId });
+        applyNativeState(nativeState, "clipboard captured");
+      } catch (error) {
+        setState({ statusNote: `native capture unavailable: ${String(error)}` });
+      }
+    })();
     return;
   }
 
   if (actionButton?.dataset.action === "export") {
     const selectedClip = getSelectedClip();
+    if (!selectedClip) {
+      setState({ statusNote: "no clip selected" });
+      return;
+    }
 
     if (isPrivateMetadataHidden(selectedClip)) {
       setState({ statusNote: "reveal masked clip before export" });
@@ -432,22 +520,27 @@ app.addEventListener("click", (event) => {
       return;
     }
 
-    setState({
-      auditEvents: [
-        createAuditEvent("agent-export-created", `Exported selected clip: ${selectedClip.title}`, selectedClip.id, {
-          clipCount: 1,
-          maskedAtExport: selectedClip.privacy.masked && !state.previewRevealed,
-          destination: "agent handoff"
-        }),
-        ...state.auditEvents
-      ],
-      statusNote: "export audited"
-    });
+    void (async () => {
+      try {
+        const nativeState = await invokeNativeState("export_clip", {
+          clipId: selectedClip.id,
+          userConfirmed: true
+        });
+        applyNativeState(nativeState, "export written and audited");
+      } catch (error) {
+        setState({ statusNote: `native export failed: ${String(error)}` });
+      }
+    })();
     return;
   }
 
   if (actionButton?.dataset.action === "panic") {
     const selectedClip = getSelectedClip();
+    if (!selectedClip) {
+      setState({ statusNote: "no clip selected" });
+      return;
+    }
+
     const confirmation = window.prompt(
       `Panic wipe is scoped to this selected ClipMind clip only:\n\n${selectedClip.title}\n\nType WIPE to remove it from this local session.`
     );
@@ -457,24 +550,36 @@ app.addEventListener("click", (event) => {
       return;
     }
 
-    setState({
-      wipedClipIds: [...state.wipedClipIds, selectedClip.id],
-      previewRevealed: false,
-      captureState: "paused",
-      auditEvents: [
-        createAuditEvent("panic-wipe-completed", `Panic wiped selected clip: ${selectedClip.title}`, selectedClip.id, {
-          scope: "selected-clip",
-          sessionId: selectedClip.sessionId
-        }),
-        ...state.auditEvents
-      ],
-      statusNote: "selected clip wiped"
-    });
+    void (async () => {
+      try {
+        const nativeState = await invokeNativeState("panic_wipe_clip", {
+          clipId: selectedClip.id,
+          confirmation
+        });
+        applyNativeState(nativeState, "selected clip wiped");
+        setState({ previewRevealed: false });
+      } catch (error) {
+        setState({ statusNote: `native wipe failed: ${String(error)}` });
+      }
+    })();
     return;
   }
 
   if (actionButton?.dataset.action === "new-session") {
-    setState({ statusNote: "new session draft opened" });
+    const title = window.prompt("Session name");
+    if (!title) {
+      setState({ statusNote: "new session canceled" });
+      return;
+    }
+
+    void (async () => {
+      try {
+        const nativeState = await invokeNativeState("create_session", { title });
+        applyNativeState(nativeState, "session created");
+      } catch (error) {
+        setState({ statusNote: `native session create failed: ${String(error)}` });
+      }
+    })();
     return;
   }
 
@@ -484,3 +589,12 @@ app.addEventListener("click", (event) => {
 });
 
 render();
+
+void (async () => {
+  try {
+    const nativeState = await invokeNativeState("load_state");
+    applyNativeState(nativeState, "native store loaded");
+  } catch {
+    setState({ statusNote: "browser preview mode" });
+  }
+})();

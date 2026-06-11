@@ -24,6 +24,7 @@ export type AgentExportFormat = "markdown" | "json";
 
 export type AuditEventType =
   | "app-unlocked"
+  | "session-created"
   | "capture-started"
   | "capture-paused"
   | "clip-masked"
