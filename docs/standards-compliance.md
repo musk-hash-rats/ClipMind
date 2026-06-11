@@ -12,6 +12,21 @@ ClipMind has an approved desktop direction, security planning docs, shared TypeS
 
 Standards were pulled from Discord channel `<#1512929541897846815>` on 2026-06-11.
 
+Studio mission:
+
+- Create memorable games, software, machinima, and digital experiences that combine creativity, quality, security, and innovation.
+- Build products the studio would proudly use and confidently share with players, customers, and partners.
+
+Core goals applied to ClipMind:
+
+- Create a unique, consumer-friendly clipboard working-memory experience.
+- Ship finished desktop software instead of stopping at prototypes.
+- Build secure software from the start.
+- Maintain professional engineering standards.
+- Learn from each project pass and preserve decisions in docs.
+- Build user trust through privacy, security, and reliable release practices.
+- Keep the work creative and enjoyable while still treating release quality seriously.
+
 Applicable frameworks and rules:
 
 - NIST CSF, NIST SSDF, NIST SP 800-53, NIST SP 800-218.
