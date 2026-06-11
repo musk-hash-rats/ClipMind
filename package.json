@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc && vite build",
+    "check": "npm run typecheck && npm run build && npm audit --omit=dev --audit-level=high",
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "tauri:dev": "tauri dev",

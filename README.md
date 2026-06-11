@@ -80,6 +80,7 @@ Project architecture notes:
 - `docs/data-contract.md`
 - `docs/security-storage.md`
 - `docs/clipboard-session-contract.md`
+- `docs/standards-compliance.md`
 
 ## Initial Ownership
 
