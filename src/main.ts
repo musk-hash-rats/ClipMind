@@ -84,6 +84,13 @@ const confidenceLabel: Record<SourceConfidence, string> = {
   fallback: "Fallback"
 };
 
+const capturedViaLabel: Record<ClipRecord["source"]["capturedVia"], string> = {
+  "clipboard-listener": "clipboard",
+  "manual-import": "imported",
+  "drag-drop": "dropped",
+  "agent-import": "agent"
+};
+
 const filterLabels: Array<{ id: ClipFilter; label: string }> = [
   { id: "all", label: "All" },
   { id: "text", label: "Text" },
@@ -102,18 +109,18 @@ const defaultSettings: AppState["settings"] = {
 };
 
 const transformLabels: Record<TransformKind, string> = {
-  "clean-formatting": "Clean",
-  markdown: "Markdown",
-  summarize: "Summarize",
+  "clean-formatting": "Clean Text",
+  markdown: "Format as Markdown",
+  summarize: "Short Summary",
   translate: "Translate",
   "fix-json": "Fix JSON",
-  "strip-tracking": "Strip Tracking",
-  ocr: "OCR",
+  "strip-tracking": "Clean Link",
+  ocr: "Read Text from Image",
   "extract-links": "Extract Links",
-  "resize-image": "Resize",
-  "note-to-task": "Task",
-  "note-to-message": "Message",
-  "note-to-email": "Email"
+  "resize-image": "Resize Image",
+  "note-to-task": "Make Task",
+  "note-to-message": "Make Message",
+  "note-to-email": "Make Email"
 };
 
 const escapeHtml = (value: string | number | boolean | undefined) =>
@@ -182,6 +189,24 @@ const formatDateTime = (iso: string) =>
 
 const getStatusNote = (nativeState: NativeState, statusNote: string) =>
   nativeState.lastExportPath ? `${statusNote}: ${nativeState.lastExportPath}` : statusNote;
+
+const getFriendlyStatus = (statusNote: string) => {
+  const normalized = statusNote.toLowerCase();
+
+  if (normalized.includes("unsupported")) return "That clipboard item is not supported yet.";
+  if (normalized.includes("permission")) return "Clipboard permission is needed.";
+  if (normalized.includes("unavailable") || normalized.includes("offline")) return "Clipboard capture is not available.";
+  if (normalized.includes("failed")) return statusNote.replace(/^native /i, "");
+  if (normalized.includes("captured")) return "Saved from clipboard.";
+  if (normalized.includes("imported")) return "Imported securely.";
+  if (normalized.includes("copied")) return "Copied securely to clipboard.";
+  if (normalized.includes("waiting")) return "Ready.";
+  if (normalized.includes("loaded")) return "Ready.";
+  if (normalized.includes("armed")) return "Watching clipboard.";
+  if (normalized.includes("paused")) return "Clipboard watching is off.";
+
+  return statusNote.replace(/^native /i, "");
+};
 
 const applyNativeState = (nativeState: NativeState, statusNote: string) => {
   const activeSession = nativeState.sessions.find((session) => session.id === state.activeSessionId) ?? nativeState.sessions[0];
@@ -293,10 +318,10 @@ const getOrigin = (clip: ClipRecord) => {
 };
 
 const getClipBadges = (clip: ClipRecord) => [
-  clip.source.capturedVia,
-  clip.privacy.localOnly ? "local only" : "syncable",
-  ...(clip.privacy.burnAfterUse ? ["burn after use"] : []),
-  ...clip.transforms.map((transform) => transform.kind)
+  capturedViaLabel[clip.source.capturedVia],
+  clip.privacy.localOnly ? "device only" : "exportable",
+  ...(clip.privacy.burnAfterUse ? ["one-time"] : []),
+  ...clip.transforms.map((transform) => transformLabels[transform.kind] ?? transform.kind)
 ];
 
 const getSessionIcon = (session: WorkSession) => {
@@ -308,7 +333,7 @@ const getSessionIcon = (session: WorkSession) => {
 
 const getPreviewText = (clip: ClipRecord) => {
   if (state.locked) {
-    return "Unlock ClipMind to reveal local working memory";
+    return "Unlock ClipMind to view saved clips";
   }
 
   if (clip.privacy.masked && !state.previewRevealed) {
@@ -438,7 +463,7 @@ const setState = (patch: Partial<AppState>) => {
 
 const renderSessions = () =>
   state.sessions.length === 0
-    ? `<div class="empty-state">Native store unavailable</div>`
+    ? `<div class="empty-state">No spaces yet</div>`
     : state.sessions
     .map((session) => {
       const count = getSessionClips(session.id).length || session.clipCount;
@@ -448,7 +473,7 @@ const renderSessions = () =>
           <span class="session-icon">${getSessionIcon(session)}</span>
           <span class="session-copy">
             <strong>${escapeHtml(session.title)}</strong>
-            <small>${escapeHtml(session.captureState)} · ${session.defaultPrivacy.masked ? "masked" : "visible"} default</small>
+            <small>${session.defaultPrivacy.masked ? "private by default" : "visible by default"}</small>
           </span>
           <b>${escapeHtml(count)}</b>
         </button>
@@ -473,7 +498,7 @@ const renderClips = () => {
   const actionTitle = protectedTitle();
 
   if (visibleClips.length === 0) {
-    return `<div class="empty-state">${state.searchQuery.trim() ? "No clips match this search" : "No clips in this view"}</div>`;
+    return `<div class="empty-state">${state.searchQuery.trim() ? "No saved clips match this search" : "No saved clips here yet"}</div>`;
   }
 
   return visibleClips
@@ -494,8 +519,8 @@ const renderClips = () => {
             </div>
           </div>
           <div class="clip-actions">
-            <button class="icon-btn" type="button" title="${escapeHtml(actionTitle || "Transform clip")}" aria-label="Transform clip" data-tool="transform" ${disabledAttr(protectedDisabled)}>✦</button>
-            <button class="icon-btn" type="button" title="${escapeHtml(actionTitle || "Copy clip to clipboard")}" aria-label="Copy clip to clipboard" data-tool="paste" ${disabledAttr(protectedDisabled)}>↩</button>
+            <button class="icon-btn" type="button" title="${escapeHtml(actionTitle || "Clean or convert")}" aria-label="Clean or convert" data-tool="transform" ${disabledAttr(protectedDisabled)}>✦</button>
+            <button class="icon-btn" type="button" title="${escapeHtml(actionTitle || "Copy securely")}" aria-label="Copy securely" data-tool="paste" ${disabledAttr(protectedDisabled)}>↩</button>
           </div>
         </article>
       `;
@@ -509,20 +534,20 @@ const renderPreview = (clip: ClipRecord | undefined) => {
       <section class="preview-panel">
         <div class="preview-head">
           <div>
-            <h2>Selected Clip</h2>
-            <strong>No clip selected</strong>
-            <small>Capture clipboard text to begin</small>
+            <h2>Saved Item</h2>
+            <strong>No saved clip selected</strong>
+            <small>Save from the clipboard or import a file</small>
           </div>
           <span class="badge">Empty</span>
         </div>
-        <div class="masked-preview">No local ClipMind data is loaded yet.</div>
+        <div class="masked-preview">Nothing saved yet.</div>
       </section>
     `;
   }
 
   const isMasked = state.locked || (clip.privacy.masked && !state.previewRevealed);
   const previewClass = isMasked ? "masked-preview" : "revealed-preview";
-  const revealLabel = state.previewRevealed ? "Mask Preview" : "Reveal Preview";
+  const revealLabel = state.previewRevealed ? "Hide Preview" : "Show Preview";
   const protectedDisabled = isProtectedDisabled();
   const imagePayload = isMasked ? null : parseImagePayload(clip);
   const filePayload = isMasked ? null : parseFilePayload(clip);
@@ -559,9 +584,9 @@ const renderPreview = (clip: ClipRecord | undefined) => {
     <section class="preview-panel">
       <div class="preview-head">
         <div>
-          <h2>Selected Clip</h2>
+          <h2>Saved Item</h2>
           <strong>${escapeHtml(clip.title)}</strong>
-          <small>${escapeHtml(clip.type)} clip · ${escapeHtml(confidenceLabel[clip.source.confidence])} source confidence</small>
+          <small>${escapeHtml(clip.type)} · ${escapeHtml(confidenceLabel[clip.source.confidence])} confidence</small>
         </div>
         <span class="badge">${isMasked ? "Masked" : "Visible"}</span>
       </div>
@@ -578,11 +603,11 @@ const renderPreview = (clip: ClipRecord | undefined) => {
 
 const renderTransformHistory = (clip: ClipRecord | undefined) => {
   if (!clip) {
-    return `<p class="audit-empty">Select a clip to run paste transformations</p>`;
+    return `<p class="audit-empty">Select a saved clip first</p>`;
   }
 
   if (clip.transforms.length === 0) {
-    return `<p class="audit-empty">No transforms created for this clip yet</p>`;
+    return `<p class="audit-empty">No cleaned versions yet</p>`;
   }
 
   return `
@@ -594,7 +619,7 @@ const renderTransformHistory = (clip: ClipRecord | undefined) => {
               <strong>${escapeHtml(transformLabels[transform.kind] ?? transform.kind)}</strong>
               <small>${escapeHtml(formatDateTime(transform.createdAt))}</small>
               <p>${escapeHtml(transform.safePreview ?? "Encrypted transform output stored locally")}</p>
-              <button class="quiet-action mini" type="button" data-transform-copy="${escapeHtml(transform.id)}" ${disabledAttr(isProtectedDisabled())}>Copy Output</button>
+              <button class="quiet-action mini" type="button" data-transform-copy="${escapeHtml(transform.id)}" ${disabledAttr(isProtectedDisabled())}>Copy Result</button>
             </li>
           `
         )
@@ -612,23 +637,23 @@ const renderPasteTools = () => {
   const textDisabled = disabledAttr(protectedDisabled || !textCompatible);
   const imageDisabled = disabledAttr(protectedDisabled || !imageCompatible);
   const title = escapeHtml(actionTitle);
-  const textTitle = escapeHtml(actionTitle || (textCompatible ? "Run text transform" : "Select a text or link clip"));
-  const imageTitle = escapeHtml(actionTitle || (imageCompatible ? "Run image transform" : "Select an image or screenshot clip"));
-  const ocrTitle = escapeHtml(actionTitle || (imageCompatible ? "Run local OCR with Tesseract" : "Select an image or screenshot clip"));
+  const textTitle = escapeHtml(actionTitle || (textCompatible ? "Clean or convert this text" : "Select a text or link clip"));
+  const imageTitle = escapeHtml(actionTitle || (imageCompatible ? "Convert this image" : "Select an image or screenshot clip"));
+  const ocrTitle = escapeHtml(actionTitle || (imageCompatible ? "Read text from this image" : "Select an image or screenshot clip"));
 
   return `
     <div class="tool-grid">
-      <button type="button" title="${textTitle}" data-tool="clean-formatting" ${textDisabled}><strong>⌁</strong><span>Clean</span></button>
+      <button type="button" title="${textTitle}" data-tool="clean-formatting" ${textDisabled}><strong>⌁</strong><span>Clean Text</span></button>
       <button type="button" title="${textTitle}" data-tool="markdown" ${textDisabled}><strong>Md</strong><span>Markdown</span></button>
       <button type="button" title="${textTitle}" data-tool="summarize" ${textDisabled}><strong>Σ</strong><span>Summarize</span></button>
       <button type="button" title="${textTitle}" data-tool="fix-json" ${textDisabled}><strong>{ }</strong><span>Fix JSON</span></button>
       <button type="button" title="${textTitle}" data-tool="strip-tracking" ${textDisabled}><strong>⌫</strong><span>Clean URL</span></button>
       <button type="button" title="${textTitle}" data-tool="extract-links" ${textDisabled}><strong>↗</strong><span>Links</span></button>
-      <button type="button" title="${textTitle}" data-tool="note-to-task" ${textDisabled}><strong>☑</strong><span>Task</span></button>
+      <button type="button" title="${textTitle}" data-tool="note-to-task" ${textDisabled}><strong>☑</strong><span>Make Task</span></button>
       <button type="button" title="${textTitle}" data-tool="note-to-message" ${textDisabled}><strong>@</strong><span>Message</span></button>
       <button type="button" title="${textTitle}" data-tool="note-to-email" ${textDisabled}><strong>✉</strong><span>Email</span></button>
       <button type="button" title="${title}" disabled><strong>文</strong><span>Translate</span></button>
-      <button type="button" title="${ocrTitle}" data-tool="ocr" ${imageDisabled}><strong>Aa</strong><span>OCR</span></button>
+      <button type="button" title="${ocrTitle}" data-tool="ocr" ${imageDisabled}><strong>Aa</strong><span>Read Text</span></button>
       <button type="button" title="${imageTitle}" data-tool="resize-image" ${imageDisabled}><strong>↘</strong><span>Resize</span></button>
     </div>
   `;
@@ -639,7 +664,7 @@ const renderSettings = () => {
 
   return `
     <section class="settings-panel" aria-label="ClipMind settings">
-      <h2>Local Preferences</h2>
+      <h2>Preferences</h2>
       <label><input type="checkbox" disabled /> Capture on launch</label>
       <label><input type="checkbox" disabled /> Auto-launch desktop app</label>
       <label><input type="checkbox" data-setting="maskByDefault" ${state.settings.maskByDefault ? "checked" : ""} /> Mask new clips by default</label>
@@ -654,7 +679,7 @@ const renderSettings = () => {
 
 const renderAuditTrail = () => {
   if (state.auditEvents.length === 0) {
-    return `<p class="audit-empty">No security events in this session yet</p>`;
+    return `<p class="audit-empty">No security events yet</p>`;
   }
 
   return `
@@ -685,7 +710,7 @@ const renderModal = () => {
       <div class="modal-backdrop" role="presentation">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <h2 id="modal-title">${state.modal.authConfigured ? "Unlock ClipMind" : "Set Unlock Passphrase"}</h2>
-          <p>${state.modal.authConfigured ? "Enter your ClipMind passphrase to unlock local working memory." : "Create a local passphrase for this ClipMind store. Use at least 12 characters; forgotten passphrases require wiping this local store."}</p>
+          <p>${state.modal.authConfigured ? "Enter your passphrase to unlock saved clips on this device." : "Create a local passphrase for this device. Use at least 12 characters; forgotten passphrases require wiping this local store."}</p>
           <label class="modal-field">
             <span>Passphrase</span>
             <input data-modal-input="unlock-passphrase" type="password" minlength="12" autocomplete="current-password" />
@@ -723,9 +748,9 @@ const renderModal = () => {
     return `
       <div class="modal-backdrop" role="presentation">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <h2 id="modal-title">New Session</h2>
+          <h2 id="modal-title">New Space</h2>
           <label class="modal-field">
-            <span>Session name</span>
+            <span>Space name</span>
             <input data-modal-input="session-title" maxlength="80" placeholder="Research, bug, client reply" />
           </label>
           <div class="modal-actions">
@@ -741,8 +766,8 @@ const renderModal = () => {
     return `
       <div class="modal-backdrop" role="presentation">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <h2 id="modal-title">Export Selected Clip</h2>
-          <p>Export full plaintext content for "${escapeHtml(state.modal.clipTitle)}" with source metadata for agent handoff.</p>
+          <h2 id="modal-title">Export Saved Clip</h2>
+          <p>Export full plaintext content for "${escapeHtml(state.modal.clipTitle)}" with source details.</p>
           ${state.modal.localOnly ? `<p class="warning-copy">This local-only clip will still export plaintext because you are explicitly exporting this selected clip.</p>` : ""}
           ${state.modal.burnAfterUse ? `<p class="warning-copy">This clip is burn-after-use and will be removed after export.</p>` : ""}
           <div class="modal-actions">
@@ -758,11 +783,11 @@ const renderModal = () => {
     return `
       <div class="modal-backdrop" role="presentation">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <h2 id="modal-title">Export Session</h2>
-          <p>Export all unmasked clips in "${escapeHtml(state.modal.sessionTitle)}". Current search and type filters do not change export scope.</p>
+          <h2 id="modal-title">Export Space</h2>
+          <p>Export all unmasked clips in "${escapeHtml(state.modal.sessionTitle)}". Search and filters do not change export scope.</p>
           <div class="modal-actions">
             ${cancelButton}
-            <button class="primary-action" type="button" data-modal-action="confirm-export-session" ${disabledAttr(busy)}>Export Session</button>
+            <button class="primary-action" type="button" data-modal-action="confirm-export-session" ${disabledAttr(busy)}>Export Space</button>
           </div>
         </section>
       </div>
@@ -803,11 +828,12 @@ const render = () => {
   const activeSessionTitle = activeSession?.title ?? "No Session";
   const protectedDisabled = isProtectedDisabled();
   const actionTitle = protectedTitle();
-  const captureLabel = captureActive ? `Auto capture armed for ${activeSessionTitle}` : "Auto Capture Paused";
+  const captureLabel = captureActive ? "Watching Clipboard" : "Clipboard Watching Off";
   const lockLabel = state.locked ? "Locked" : "Unlocked";
   const sourceSummary = selectedClip
     ? `${selectedClip.source.deviceId} · ${selectedClip.source.appName}`
-    : `local-desktop · ${state.nativeReady ? "waiting for clipboard" : "native store offline"}`;
+    : `This device · ${state.nativeReady ? "Ready" : "Starting"}`;
+  const friendlyStatus = getFriendlyStatus(state.statusNote);
 
   app.innerHTML = `
     <main class="shell" aria-label="ClipMind desktop app">
@@ -816,9 +842,9 @@ const render = () => {
           <span class="brand-mark">⌘</span>
           <span>ClipMind</span>
         </div>
-        <label class="search" aria-label="Search working memory">
+        <label class="search" aria-label="Search saved clips">
           <span aria-hidden="true">⌕</span>
-          <input data-action="search" value="${escapeHtml(state.searchQuery)}" placeholder="Search clips, sources, transforms" />
+          <input data-action="search" value="${escapeHtml(state.searchQuery)}" placeholder="Search saved clips" />
         </label>
         <button class="status-lock ${state.locked ? "" : "unlocked"}" type="button" title="${escapeHtml(lockLabel)}" data-action="toggle-lock" ${disabledAttr(isBusy())}>
           <span aria-hidden="true">●</span>
@@ -827,37 +853,40 @@ const render = () => {
         <button class="icon-btn" type="button" title="Settings" aria-label="Settings" data-action="toggle-settings" ${disabledAttr(isBusy())}>⚙</button>
       </header>
 
-      <aside class="sidebar" aria-label="Work sessions">
-        <button class="primary-action full" type="button" data-action="new-session" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>New Session</button>
-        <h2>Work Sessions</h2>
+      <aside class="sidebar" aria-label="Spaces">
+        <button class="primary-action full" type="button" data-action="new-session" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>New Space</button>
+        <h2>Spaces</h2>
         <nav class="session-list">${renderSessions()}</nav>
       </aside>
 
       <section class="workspace" aria-label="Active session clips">
         <div class="capture-bar ${captureActive ? "" : "paused"}">
           <div class="capture-state">
-            <span class="capture-dot"></span>
+            <span class="capture-dot" aria-hidden="true"></span>
             <div>
               <strong>${escapeHtml(captureLabel)}</strong>
-              <small>${escapeHtml(sourceSummary)} · ${escapeHtml(state.statusNote)}</small>
+              <small>${escapeHtml(sourceSummary)} · ${escapeHtml(friendlyStatus)}</small>
             </div>
           </div>
-          <button class="capture-toggle" type="button" data-action="toggle-capture" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>
-            <span>Auto</span>
-            <span class="switch" aria-hidden="true"></span>
-          </button>
-          <button class="quiet-action" type="button" data-action="capture-now" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Capture Clipboard</button>
-          <button class="quiet-action" type="button" data-action="import-file" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Import File</button>
-          <button class="quiet-action" type="button" data-action="import-screenshot" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Import Screenshot</button>
+          <div class="capture-actions">
+            <button class="capture-toggle" type="button" data-action="toggle-capture" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>
+              <span>${captureActive ? "On" : "Off"}</span>
+              <span class="switch" aria-hidden="true"></span>
+            </button>
+            <button class="primary-action" type="button" data-action="capture-now" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Save Clipboard</button>
+            <button class="quiet-action" type="button" data-action="import-file" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Add File</button>
+            <button class="quiet-action" type="button" data-action="import-screenshot" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Add Image</button>
+          </div>
           <input class="hidden-file-input" type="file" data-file-import="file" aria-hidden="true" tabindex="-1" />
           <input class="hidden-file-input" type="file" accept="image/*" data-file-import="screenshot" aria-hidden="true" tabindex="-1" />
         </div>
 
         <div class="mode-row" aria-label="Clip filters">${renderFilters()}</div>
-        <div class="mode-row" aria-label="Search mode">
+        <div class="mode-row search-options" aria-label="Search mode">
+          <span class="mode-label">Search</span>
           <button class="mode ${state.searchMode === "exact" ? "active" : ""}" type="button" data-search-mode="exact">Exact</button>
-          <button class="mode ${state.searchMode === "semantic" ? "active" : ""}" type="button" data-search-mode="semantic" ${disabledAttr(protectedDisabled)}>Semantic</button>
-          <button class="quiet-action" type="button" data-action="rebuild-semantic" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Rebuild Semantic Index</button>
+          <button class="mode ${state.searchMode === "semantic" ? "active" : ""}" type="button" data-search-mode="semantic" ${disabledAttr(protectedDisabled)}>Smart</button>
+          <button class="quiet-action subtle" type="button" data-action="rebuild-semantic" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Refresh Smart Search</button>
         </div>
         <section class="clip-list" aria-label="Clips">${renderClips()}</section>
       </section>
@@ -866,7 +895,7 @@ const render = () => {
         ${renderPreview(selectedClip)}
 
         <section>
-          <h2>Source Memory</h2>
+          <h2>Details</h2>
           <dl class="meta-list">
             <div><dt>Source</dt><dd>${escapeHtml(selectedClip?.source.appName ?? "None")}</dd></div>
             <div><dt>Origin</dt><dd>${selectedClip ? escapeHtml(getOrigin(selectedClip)) : "None"}</dd></div>
@@ -876,24 +905,24 @@ const render = () => {
         </section>
 
         <section>
-          <h2>Paste Tools</h2>
+          <h2>Clean & Convert</h2>
           ${renderPasteTools()}
         </section>
 
         <section>
-          <h2>Transform History</h2>
+          <h2>Saved Results</h2>
           ${renderTransformHistory(selectedClip)}
         </section>
 
         <section>
-          <h2>Agent Handoff</h2>
-          <button class="primary-action full" type="button" data-action="export" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Export Selected</button>
-          <button class="quiet-action full" type="button" data-action="export-session" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Export Session</button>
+          <h2>Export</h2>
+          <button class="primary-action full" type="button" data-action="export" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Export Clip</button>
+          <button class="quiet-action full" type="button" data-action="export-session" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Export Space</button>
           <button class="danger-action full" type="button" data-action="panic" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Panic Wipe Clip</button>
         </section>
 
         <section>
-          <h2>Audit Trail</h2>
+          <h2>Security Log</h2>
           ${renderAuditTrail()}
         </section>
         ${renderSettings()}

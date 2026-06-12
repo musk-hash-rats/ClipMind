@@ -46,7 +46,7 @@ button:disabled {
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 248px minmax(360px, 1fr) 360px;
+  grid-template-columns: 228px minmax(380px, 1fr) 344px;
   grid-template-rows: 64px 1fr;
 }
 
@@ -65,7 +65,7 @@ button:disabled {
 }
 
 .brand {
-  width: 220px;
+  width: 196px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -172,6 +172,8 @@ h2 {
   min-height: 40px;
   padding: 0 14px;
   font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .quiet-action {
@@ -213,6 +215,12 @@ h2 {
   margin-top: 8px;
   padding: 0 10px;
   font-size: 12px;
+}
+
+.quiet-action.subtle {
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--line);
 }
 
 .session-list {
@@ -280,12 +288,12 @@ h2 {
 }
 
 .capture-bar {
-  min-height: 72px;
-  display: flex;
-  flex-wrap: wrap;
+  min-height: 86px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   padding: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -310,8 +318,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1 1 300px;
-  min-width: 220px;
+  min-width: 0;
 }
 
 .capture-state > div {
@@ -321,9 +328,7 @@ h2 {
 .capture-state strong,
 .capture-state small {
   display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .capture-state small {
@@ -343,6 +348,7 @@ h2 {
 .capture-toggle {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: 38px;
   padding: 0 10px;
@@ -354,10 +360,17 @@ h2 {
   white-space: nowrap;
 }
 
-.capture-bar .quiet-action {
-  flex: 1 1 132px;
-  min-width: 132px;
-  max-width: 176px;
+.capture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 520px;
+}
+
+.capture-actions .primary-action,
+.capture-actions .quiet-action {
+  min-width: 112px;
   padding: 6px 12px;
   white-space: normal;
 }
@@ -386,9 +399,22 @@ h2 {
 
 .mode-row {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin: 14px 0;
   overflow-x: auto;
+}
+
+.search-options {
+  margin-top: -4px;
+}
+
+.mode-label {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
 .mode {
@@ -507,6 +533,8 @@ h2 {
 .clip-actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .preview-panel {
@@ -529,6 +557,7 @@ h2 {
 .preview-head strong,
 .preview-head small {
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .preview-head small {
@@ -608,7 +637,8 @@ h2 {
 }
 
 .meta-list div {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
@@ -623,16 +653,17 @@ h2 {
   margin: 0;
   font-weight: 750;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .tool-grid button {
-  min-height: 58px;
+  min-height: 62px;
   display: grid;
   place-items: center;
   gap: 2px;
@@ -642,6 +673,8 @@ h2 {
   border: 1px solid var(--line);
   text-align: center;
   font-size: 12px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .tool-grid strong {
@@ -790,6 +823,7 @@ h2 {
 
 .modal-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -804,13 +838,23 @@ h2 {
 
 @media (max-width: 1060px) {
   .shell {
-    grid-template-columns: 224px minmax(320px, 1fr);
+    grid-template-columns: 216px minmax(320px, 1fr);
   }
 
   .inspector {
     grid-column: 1 / -1;
     border-left: 0;
     border-top: 1px solid var(--line);
+  }
+
+  .capture-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .capture-actions {
+    width: 100%;
+    max-width: none;
+    justify-content: flex-start;
   }
 }
 
@@ -873,14 +917,25 @@ h2 {
 
   .capture-bar {
     align-items: flex-start;
-    flex-direction: column;
   }
 
   .capture-state,
+  .capture-actions,
+  .capture-actions .primary-action,
+  .capture-actions .quiet-action,
   .capture-toggle,
   .capture-bar .quiet-action {
     width: 100%;
     max-width: none;
+  }
+
+  .capture-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .capture-toggle {
+    grid-column: 1 / -1;
   }
 
   .clip {
@@ -890,5 +945,28 @@ h2 {
   .clip-actions {
     grid-column: 1 / -1;
     justify-content: flex-end;
+  }
+
+  .meta-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .meta-list dd {
+    text-align: left;
+  }
+}
+
+@media (max-width: 440px) {
+  .capture-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-actions > button {
+    width: 100%;
   }
 }
