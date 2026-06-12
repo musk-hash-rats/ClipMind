@@ -45,9 +45,15 @@ jobs:
       - name: Build desktop app
         run: npm run tauri:build
 
-      - name: Upload installer
+      - name: Generate checksums and provenance
+        run: npm run release:checksums
+
+      - name: Upload installer and release evidence
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: ${{ matrix.bundle-glob }}
+          path: |
+            ${{ matrix.bundle-glob }}
+            src-tauri/target/release/bundle/SHA256SUMS
+            src-tauri/target/release/bundle/provenance.json
           if-no-files-found: error

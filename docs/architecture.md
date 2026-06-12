@@ -30,6 +30,6 @@ Detailed contracts:
 
 ## Current Blockers
 
-- Rust/Cargo is not installed in this workspace.
 - Native clipboard capture behavior needs separate macOS and Windows implementation notes.
-- MVP encryption library decision is not made yet.
+- Final macOS `.dmg` and Windows `.exe` installer builds need native target validation or GitHub Actions.
+- App unlock/keychain hardening is still needed beyond the current local AES-256-GCM file-store.

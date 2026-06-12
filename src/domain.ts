@@ -24,16 +24,21 @@ export type AgentExportFormat = "markdown" | "json";
 
 export type AuditEventType =
   | "app-unlocked"
+  | "app-locked"
   | "session-created"
   | "capture-started"
   | "capture-paused"
   | "clip-masked"
   | "clip-revealed"
   | "clip-expired"
+  | "clip-copied"
   | "burn-after-use-consumed"
   | "panic-wipe-requested"
   | "panic-wipe-completed"
-  | "agent-export-created";
+  | "local-store-reset"
+  | "transform-created"
+  | "agent-export-created"
+  | "clip-transformed";
 
 export interface ClipSource {
   appName: string;
@@ -58,6 +63,7 @@ export interface ClipPrivacy {
 export interface ClipContentRef {
   encryptedPayloadId: string;
   safePreview: string;
+  revealedPayload?: string;
   byteSize?: number;
   mimeType?: string;
 }

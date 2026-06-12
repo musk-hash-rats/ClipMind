@@ -16,13 +16,25 @@ Local storage responsibilities:
 
 ## Key Management
 
-Open implementation decision:
+Current implementation:
+
+- Clip payloads are encrypted with an AES-256-GCM data key.
+- The data key is wrapped with a passphrase-derived Argon2id key and stored in the local ClipMind store as `wrappedDataKey`.
+- The store records Argon2id KDF algorithm/version/parameter metadata so future KDF parameter migrations can be handled deliberately.
+- First unlock sets the local passphrase and migrates the previous raw key-file fallback into the wrapped-key model.
+- Passphrases must be at least 12 characters.
+- While unlocked, the unwrapped data key is held only in native runtime memory; locking clears it.
+- Startup always forces locked state and clears runtime key material.
+
+Remaining platform hardening:
 
 - macOS: prefer Keychain-backed app secret.
 - Windows: prefer DPAPI/Credential Manager-backed app secret.
-- Cross-platform fallback: user passphrase-derived key.
+- Cross-platform fallback: user passphrase-derived wrapped data key.
 
-The UI can show an app lock before key management is fully wired, but implementation should not call privacy complete until unlock/key retrieval exists.
+## Recovery Policy
+
+ClipMind is local-first encrypted memory. If the passphrase is forgotten, encrypted payload recovery is not available in the current fallback model. The in-app reset flow requires typed `RESET`, clears runtime key material, removes local ClipMind store/export/key artifacts, and creates a fresh locked store. Reset does not recover payloads.
 
 ## Data Classes
 

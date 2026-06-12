@@ -10,7 +10,9 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "release:checksums": "node scripts/release-checksums.mjs",
+    "release:build": "npm run tauri:build && npm run release:checksums"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.9.0"

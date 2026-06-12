@@ -91,3 +91,14 @@ Audit fields:
 - `targetId`
 - `summary`
 - `metadata`
+
+## Imported File Payload
+
+Manual file and screenshot imports store the full bytes inside the encrypted payload, not in public metadata.
+
+Payload fields:
+
+- `kind`: `file-bytes`
+- `fileName`: basename only; full local path must not be stored.
+- `mimeType`: browser-provided MIME type or `application/octet-stream`.
+- `bytes`: base64 file bytes.

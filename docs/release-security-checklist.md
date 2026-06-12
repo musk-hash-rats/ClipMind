@@ -8,14 +8,15 @@ ClipMind is not release-ready until every required item is complete or explicitl
 - [ ] CI continuous checks pass on `main`.
 - [ ] Dependency review passes for pull requests.
 - [ ] CodeQL completes without high-severity findings.
-- [ ] Native clipboard capture is opt-in and pauseable.
-- [ ] Capture state is always visible.
-- [ ] Clip payloads are encrypted at rest.
+- [x] Native clipboard capture is opt-in and pauseable.
+- [x] Capture state is always visible.
+- [x] Clip payloads are encrypted at rest.
 - [ ] Key management is implemented for macOS and Windows.
+- [x] Passphrase recovery/reset policy is visible to users before passphrase setup.
 - [ ] Private metadata handling is documented and implemented.
-- [ ] Panic wipe is scoped to ClipMind-owned data only.
-- [ ] Agent export requires explicit selected clips/sessions.
-- [ ] Agent export creates an audit event.
+- [x] Panic wipe is scoped to ClipMind-owned data only.
+- [x] Agent export requires explicit selected clips/sessions.
+- [x] Agent export creates an audit event.
 - [ ] Masked clips are not exported unless explicitly revealed or included.
 - [ ] No logs include payloads, secrets, tokens, or private metadata.
 - [ ] Accessibility pass covers keyboard navigation, focus states, labels, and contrast.
@@ -24,7 +25,13 @@ ClipMind is not release-ready until every required item is complete or explicitl
 
 - [ ] macOS installer is signed and notarized.
 - [ ] Windows installer is signed.
-- [ ] Release artifacts include provenance or checksums.
+- [ ] macOS clipboard and screen-recording/screenshot permission behavior is validated.
+- [ ] Windows clipboard, screenshot, and file-drop behavior is validated.
+- [ ] Local Tesseract OCR engine availability and temp-file cleanup behavior is validated on target platforms.
+- [ ] System tray/menu behavior is implemented locally and still needs validation on macOS and Windows.
+- [ ] Auto-start behavior is validated on macOS and Windows.
+- [ ] App data paths are documented and validated on macOS and Windows.
+- [x] Release artifacts include provenance or checksums.
 - [ ] Vulnerability reporting path is published.
 - [ ] Privacy policy reflects actual local storage/export behavior.
 - [ ] Final standards-compliance review is complete.

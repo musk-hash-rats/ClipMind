@@ -6,8 +6,8 @@ ClipMind is a macOS and Windows desktop app for encrypted clipboard working memo
 
 - Stack: Tauri v2 native shell + Rust backend + TypeScript UI.
 - Target: macOS and Windows desktop first.
-- Current state: scaffolded repo, interactive consumer UI shell, native command stubs.
-- Blocker: Rust/Cargo is not installed in this workspace, so Tauri builds cannot run here yet.
+- Current state: scaffolded repo, interactive consumer UI shell, encrypted local text capture, sessions, search, text transforms, selected clip/session export, panic wipe, and audit trail.
+- Local verification: Rust/Cargo is installed in this workspace, so native Rust checks can run here. Final macOS `.dmg` and Windows `.exe` installers still need native platform builds or GitHub Actions.
 
 ## Desktop Deliverables
 
@@ -89,3 +89,12 @@ Project architecture notes:
 
 - streets: GUI, desktop UX, prototype-to-app flow, task list/docs.
 - rats_claude: architecture, encrypted storage, clipboard/session contract, agent handoff boundaries, security review.
+
+## Agent Workflow Gate
+
+ClipMind work follows the shared OpenClaw routing protocol:
+
+- Manager routes non-trivial app work and records acceptance criteria.
+- Backend Builder owns implementation-heavy app, native bridge, storage, automation, and verification changes.
+- Code Review must review meaningful code changes before the work is reported complete.
+- Streets and rats_claude can coordinate, summarize, or handle narrow ownership tasks, but should call the specialist agents when work crosses into implementation or release confidence.
