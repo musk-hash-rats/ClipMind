@@ -1,6 +1,6 @@
-# ClipMind Desktop
+# ClipGuard Desktop
 
-ClipMind is a macOS and Windows desktop app for encrypted clipboard working memory. It ships as native desktop software, not as a hosted web app.
+ClipGuard is a macOS and Windows desktop app for encrypted clipboard working memory. It ships as native desktop software, not as a hosted web app.
 
 ## Status
 
@@ -92,7 +92,7 @@ Project architecture notes:
 
 ## Agent Workflow Gate
 
-ClipMind work follows the shared OpenClaw routing protocol:
+ClipGuard work follows the shared OpenClaw routing protocol:
 
 - Manager routes non-trivial app work and records acceptance criteria.
 - Backend Builder owns implementation-heavy app, native bridge, storage, automation, and verification changes.

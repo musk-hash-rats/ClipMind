@@ -1,6 +1,6 @@
 # Security Policy
 
-ClipMind is early-stage and not release-compliant yet.
+ClipGuard is early-stage and not release-compliant yet.
 
 ## Supported Versions
 
@@ -25,4 +25,4 @@ Include:
 - Clip payloads must not be logged.
 - Masked content must stay masked across previews, search, and export unless the user explicitly reveals it.
 - Agent handoff must include only selected context.
-- Panic wipe must affect ClipMind-owned data only.
+- Panic wipe must affect ClipGuard-owned data only.

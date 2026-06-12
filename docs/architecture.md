@@ -1,8 +1,8 @@
-# ClipMind Architecture Notes
+# ClipGuard Architecture Notes
 
 ## Approved Product Shape
 
-ClipMind is an encrypted working-memory desktop app for macOS and Windows. It should not be framed as generic clipboard history.
+ClipGuard is an encrypted working-memory desktop app for macOS and Windows. It should not be framed as generic clipboard history.
 
 ## Initial Modules
 

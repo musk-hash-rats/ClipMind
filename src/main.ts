@@ -146,7 +146,7 @@ const loadSettings = () => {
   try {
     return {
       ...defaultSettings,
-      ...JSON.parse(window.localStorage.getItem("clipmind-settings") ?? "{}")
+      ...JSON.parse(window.localStorage.getItem("clipguard-settings") ?? "{}")
     };
   } catch {
     return defaultSettings;
@@ -154,7 +154,7 @@ const loadSettings = () => {
 };
 
 const saveSettings = (settings: AppState["settings"]) => {
-  window.localStorage.setItem("clipmind-settings", JSON.stringify(settings));
+  window.localStorage.setItem("clipguard-settings", JSON.stringify(settings));
 };
 
 let state: AppState = {
@@ -238,7 +238,7 @@ const isBusy = () => Boolean(state.pendingAction);
 const isProtectedDisabled = () => state.locked || isBusy();
 
 const protectedTitle = () => {
-  if (state.locked) return "Unlock ClipMind first";
+  if (state.locked) return "Unlock ClipGuard first";
   if (state.pendingAction) return `Working: ${state.pendingAction}`;
   return "";
 };
@@ -333,7 +333,7 @@ const getSessionIcon = (session: WorkSession) => {
 
 const getPreviewText = (clip: ClipRecord) => {
   if (state.locked) {
-    return "Unlock ClipMind to view saved clips";
+    return "Unlock ClipGuard to view saved clips";
   }
 
   if (clip.privacy.masked && !state.previewRevealed) {
@@ -670,7 +670,7 @@ const renderSettings = () => {
   if (!state.settingsOpen) return "";
 
   return `
-    <section class="settings-panel" aria-label="ClipMind settings">
+    <section class="settings-panel" aria-label="ClipGuard settings">
       <h2>Preferences</h2>
       <label><input type="checkbox" disabled /> Capture on launch</label>
       <label><input type="checkbox" disabled /> Auto-launch desktop app</label>
@@ -716,7 +716,7 @@ const renderModal = () => {
     return `
       <div class="modal-backdrop" role="presentation">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-          <h2 id="modal-title">${state.modal.authConfigured ? "Unlock ClipMind" : "Set Unlock Passphrase"}</h2>
+          <h2 id="modal-title">${state.modal.authConfigured ? "Unlock ClipGuard" : "Set Unlock Passphrase"}</h2>
           <p>${state.modal.authConfigured ? "Enter your passphrase to unlock saved clips on this device." : "Create a local passphrase for this device. Use at least 12 characters; forgotten passphrases require wiping this local store."}</p>
           <label class="modal-field">
             <span>Passphrase</span>
@@ -737,7 +737,7 @@ const renderModal = () => {
       <div class="modal-backdrop" role="presentation">
         <section class="modal danger-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <h2 id="modal-title">Reset Local Store</h2>
-          <p>This wipes all ClipMind sessions, clips, encrypted payloads, exports, and passphrase metadata on this device. Forgotten passphrases cannot be recovered.</p>
+          <p>This wipes all ClipGuard sessions, clips, encrypted payloads, exports, and passphrase metadata on this device. Forgotten passphrases cannot be recovered.</p>
           <label class="modal-field">
             <span>Type RESET to confirm</span>
             <input data-modal-input="reset-confirmation" autocomplete="off" />
@@ -805,7 +805,7 @@ const renderModal = () => {
     <div class="modal-backdrop" role="presentation">
       <section class="modal danger-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <h2 id="modal-title">Panic Wipe Clip</h2>
-        <p>Remove "${escapeHtml(state.modal.clipTitle)}" and its encrypted payload from this local ClipMind store.</p>
+        <p>Remove "${escapeHtml(state.modal.clipTitle)}" and its encrypted payload from this local ClipGuard store.</p>
         <label class="modal-field">
           <span>Type WIPE to confirm</span>
           <input data-modal-input="wipe-confirmation" autocomplete="off" />
@@ -843,11 +843,11 @@ const render = () => {
   const friendlyStatus = getFriendlyStatus(state.statusNote);
 
   app.innerHTML = `
-    <main class="shell" aria-label="ClipMind desktop app">
+    <main class="shell" aria-label="ClipGuard desktop app">
       <header class="topbar">
-        <div class="brand" aria-label="ClipMind">
+        <div class="brand" aria-label="ClipGuard">
           <span class="brand-mark">⌘</span>
-          <span>ClipMind</span>
+          <span>ClipGuard</span>
         </div>
         <button class="capture-toggle topbar-capture ${captureActive ? "" : "paused"}" type="button" data-action="toggle-capture" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>
           <span>Auto Capture</span>

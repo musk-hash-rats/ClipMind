@@ -1,12 +1,12 @@
 # OCR Backend
 
-ClipMind OCR is implemented as a pluggable local-engine path.
+ClipGuard OCR is implemented as a pluggable local-engine path.
 
 ## Current Backend
 
 - Engine: local `tesseract` CLI.
-- Supported input: revealed image/screenshot payloads that ClipMind can decode.
-- Processing: ClipMind writes a temporary PNG under its app data `tmp/` directory, runs `tesseract <image> stdout`, captures text, and removes the temporary PNG.
+- Supported input: revealed image/screenshot payloads that ClipGuard can decode.
+- Processing: ClipGuard writes a temporary PNG under its app data `tmp/` directory, runs `tesseract <image> stdout`, captures text, and removes the temporary PNG.
 - Timeout: OCR is killed if Tesseract runs longer than 20 seconds.
 - Storage: OCR output is stored as an encrypted transform payload.
 - Clipboard: OCR output is copied to the system clipboard as text.

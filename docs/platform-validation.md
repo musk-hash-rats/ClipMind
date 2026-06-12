@@ -6,9 +6,9 @@ Last updated: 2026-06-12.
 
 - Linux release packaging passes with `npm run tauri:build`.
 - Linux artifacts generated:
-  - `src-tauri/target/release/bundle/deb/ClipMind_0.1.0_amd64.deb`
-  - `src-tauri/target/release/bundle/rpm/ClipMind-0.1.0-1.x86_64.rpm`
-  - `src-tauri/target/release/bundle/appimage/ClipMind_0.1.0_amd64.AppImage`
+  - `src-tauri/target/release/bundle/deb/ClipGuard_0.1.0_amd64.deb`
+  - `src-tauri/target/release/bundle/rpm/ClipGuard-0.1.0-1.x86_64.rpm`
+  - `src-tauri/target/release/bundle/appimage/ClipGuard_0.1.0_amd64.AppImage`
 - Local checks pass:
   - `npm run check`
   - `cargo check`

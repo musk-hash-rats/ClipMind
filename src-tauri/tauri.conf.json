@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ClipMind",
+  "productName": "ClipGuard",
   "version": "0.1.0",
-  "identifier": "studio.ratstreet.clipmind",
+  "identifier": "studio.ratstreet.clipguard",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "ClipMind",
+        "title": "ClipGuard",
         "width": 1280,
         "height": 820,
         "minWidth": 960,

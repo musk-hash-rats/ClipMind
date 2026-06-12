@@ -1,12 +1,12 @@
 # Standards Compliance Pass
 
-This document tracks ClipMind against the studio security and coding standards gate. It should be updated whenever the standard changes or a release boundary moves.
+This document tracks ClipGuard against the studio security and coding standards gate. It should be updated whenever the standard changes or a release boundary moves.
 
 ## Current Verdict
 
 Status: not release-compliant yet.
 
-ClipMind has an approved desktop direction, security planning docs, shared TypeScript contracts, and passing frontend build checks. It does not yet have the native security implementation needed for release.
+ClipGuard has an approved desktop direction, security planning docs, shared TypeScript contracts, and passing frontend build checks. It does not yet have the native security implementation needed for release.
 
 ## Standards Source
 
@@ -17,7 +17,7 @@ Studio mission:
 - Create memorable games, software, machinima, and digital experiences that combine creativity, quality, security, and innovation.
 - Build products the studio would proudly use and confidently share with players, customers, and partners.
 
-Core goals applied to ClipMind:
+Core goals applied to ClipGuard:
 
 - Create a unique, consumer-friendly clipboard working-memory experience.
 - Ship finished desktop software instead of stopping at prototypes.
@@ -83,7 +83,7 @@ Required before alpha release:
 - Private metadata such as URLs, file paths, sender identity, and window titles must be protected when sensitive.
 - Masked clips must not be exported to agents unless the user explicitly reveals or includes them.
 - Agent exports must include only selected clips and must create audit events.
-- Panic wipe must affect ClipMind-owned data only and must not delete unrelated user files.
+- Panic wipe must affect ClipGuard-owned data only and must not delete unrelated user files.
 - macOS and Windows permission prompts must be documented and handled in product UI.
 
 Current coverage:

@@ -1,10 +1,10 @@
-# ClipMind Agent Workflow
+# ClipGuard Agent Workflow
 
 Status: active workflow correction, 2026-06-12.
 
 ## Why This Exists
 
-ClipMind is no longer only a planning artifact. The implementation repo exists at `projects/clipmind-desktop`, and work in this repo must follow the studio's specialist-agent workflow.
+ClipGuard is no longer only a planning artifact. The implementation repo exists at `projects/clipmind-desktop`, and work in this repo must follow the studio's specialist-agent workflow.
 
 The previous drift happened because GUI/app implementation started moving as a general task after planning docs were written, while the task split still said no repo existed. That made it easy to skip the manager/backend/review handoff.
 
@@ -38,7 +38,7 @@ The previous drift happened because GUI/app implementation started moving as a g
 ```text
 FROM: <agent>
 TO: manager / backend_builder / code_review / rats_claude / streets
-GOAL: <ClipMind outcome>
+GOAL: <ClipGuard outcome>
 REASONING: <why this owner is responsible, what risk exists>
 OUTPUT: <files changed or artifact path>
 DELEGATED TASKS: <required follow-up owner or NONE>

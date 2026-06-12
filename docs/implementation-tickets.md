@@ -1,4 +1,4 @@
-# ClipMind Implementation Tickets
+# ClipGuard Implementation Tickets
 
 Status: started after contract approval on 2026-06-11.
 
@@ -55,7 +55,7 @@ Status: started after contract approval on 2026-06-11.
 6. Implement JSON repair/pretty-print. Done.
 7. Implement link tracking cleanup. Done.
 8. Add OCR and image resize after image/screenshot support lands. Resize is done for image/screenshot payloads; OCR is implemented through a local Tesseract backend and requires host validation.
-9. Add real image preview/detail UI. Done for revealed ClipMind RGBA image payloads and imported image/screenshot files.
+9. Add real image preview/detail UI. Done for revealed ClipGuard RGBA image payloads and imported image/screenshot files.
 10. Copy original selected clip to system clipboard. Done with native decrypt, audit, and burn-after-use handling.
 11. Remove hardcoded semantic match score until semantic search exists. Done.
 12. Make transform history outputs actionable. Done for copying previous transform output back to clipboard.

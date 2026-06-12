@@ -1,6 +1,6 @@
 # Release Security Checklist
 
-ClipMind is not release-ready until every required item is complete or explicitly waived by the project owner.
+ClipGuard is not release-ready until every required item is complete or explicitly waived by the project owner.
 
 ## Required Before Alpha
 
@@ -14,7 +14,7 @@ ClipMind is not release-ready until every required item is complete or explicitl
 - [ ] Key management is implemented for macOS and Windows.
 - [x] Passphrase recovery/reset policy is visible to users before passphrase setup.
 - [ ] Private metadata handling is documented and implemented.
-- [x] Panic wipe is scoped to ClipMind-owned data only.
+- [x] Panic wipe is scoped to ClipGuard-owned data only.
 - [x] Agent export requires explicit selected clips/sessions.
 - [x] Agent export creates an audit event.
 - [ ] Masked clips are not exported unless explicitly revealed or included.

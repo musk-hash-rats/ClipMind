@@ -93,7 +93,7 @@ for (const filePath of artifacts) {
 
 const checksums = records.map((record) => `${record.sha256}  ${record.path}`).join("\n") + "\n";
 const provenance = {
-  schema: "clipmind.release-provenance.v1",
+  schema: "clipguard.release-provenance.v1",
   package: packageJson.name,
   version: packageJson.version,
   generatedAt,

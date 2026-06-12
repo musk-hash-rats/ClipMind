@@ -1,4 +1,4 @@
-# ClipMind Data Contract
+# ClipGuard Data Contract
 
 This contract defines the MVP data shapes that the UI, native capture layer, encrypted store, and agent export layer should share.
 

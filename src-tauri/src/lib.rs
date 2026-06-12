@@ -413,7 +413,7 @@ fn export_dir(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 fn key_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(data_dir(app)?.join("clipmind.key"))
+    Ok(data_dir(app)?.join("clipguard.key"))
 }
 
 fn read_or_create_key(app: &AppHandle) -> Result<[u8; 32], String> {
@@ -526,13 +526,13 @@ fn audit_event(event_type: &str, summary: String, target_id: Option<String>) -> 
 
 fn require_unlocked(store: &AppStore, runtime: &State<'_, Mutex<RuntimeSecrets>>) -> Result<[u8; 32], String> {
     if store.locked {
-        return Err("ClipMind is locked".to_string());
+        return Err("ClipGuard is locked".to_string());
     } else {
         runtime
             .lock()
             .map_err(|_| "Runtime lock failed".to_string())?
             .data_key
-            .ok_or_else(|| "ClipMind unlock key is not available".to_string())
+            .ok_or_else(|| "ClipGuard unlock key is not available".to_string())
     }
 }
 
@@ -716,7 +716,7 @@ fn pause_all_capture_sessions(app: &AppHandle) -> Result<ClientState, String> {
 fn resume_primary_capture_session(app: &AppHandle) -> Result<ClientState, String> {
     let mut store = load_store(app)?;
     if store.locked {
-        return Err("ClipMind is locked".to_string());
+        return Err("ClipGuard is locked".to_string());
     }
     let session_id = store
         .sessions
@@ -1126,7 +1126,7 @@ fn build_semantic_index(store: &AppStore, data_key: &[u8; 32]) -> Result<Semanti
 
     Ok(SemanticIndex {
         version: SEMANTIC_INDEX_VERSION,
-        model: "clipmind-local-hash-v1".to_string(),
+        model: "clipguard-local-hash-v1".to_string(),
         built_at: now_iso(),
         records,
     })
@@ -1166,7 +1166,7 @@ fn load_state(app: AppHandle, runtime: State<'_, Mutex<RuntimeSecrets>>) -> Resu
             0,
             audit_event(
                 "app-locked",
-                "ClipMind app locked on startup".to_string(),
+                "ClipGuard app locked on startup".to_string(),
                 None,
             ),
         );
@@ -1192,7 +1192,7 @@ fn lock_store(app: &AppHandle, runtime: &Mutex<RuntimeSecrets>) -> Result<Client
         0,
         audit_event(
             "app-locked",
-            "ClipMind app locked".to_string(),
+            "ClipGuard app locked".to_string(),
             None,
         ),
     );
@@ -1221,9 +1221,9 @@ fn unlock_app(app: AppHandle, passphrase: String) -> Result<ClientState, String>
         audit_event(
             "app-unlocked",
             if was_configured {
-                "ClipMind app unlocked".to_string()
+                "ClipGuard app unlocked".to_string()
             } else {
-                "ClipMind unlock passphrase set".to_string()
+                "ClipGuard unlock passphrase set".to_string()
             },
             None,
         ),
@@ -1263,7 +1263,7 @@ fn reset_store(
         0,
         audit_event(
             "local-store-reset",
-            "Reset local ClipMind store after passphrase recovery request".to_string(),
+            "Reset local ClipGuard store after passphrase recovery request".to_string(),
             None,
         ),
     );
@@ -2084,13 +2084,13 @@ fn spawn_clipboard_watcher(app: AppHandle) {
 }
 
 fn setup_tray(app: &AppHandle) -> Result<(), String> {
-    let show = MenuItem::with_id(app, "tray-show", "Show ClipMind", true, None::<&str>)
+    let show = MenuItem::with_id(app, "tray-show", "Show ClipGuard", true, None::<&str>)
         .map_err(|error| error.to_string())?;
     let pause = MenuItem::with_id(app, "tray-pause", "Pause Capture", true, None::<&str>)
         .map_err(|error| error.to_string())?;
     let resume = MenuItem::with_id(app, "tray-resume", "Resume Capture", true, None::<&str>)
         .map_err(|error| error.to_string())?;
-    let lock = MenuItem::with_id(app, "tray-lock", "Lock ClipMind", true, None::<&str>)
+    let lock = MenuItem::with_id(app, "tray-lock", "Lock ClipGuard", true, None::<&str>)
         .map_err(|error| error.to_string())?;
     let quit = MenuItem::with_id(app, "tray-quit", "Quit", true, None::<&str>)
         .map_err(|error| error.to_string())?;
@@ -2098,7 +2098,7 @@ fn setup_tray(app: &AppHandle) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
 
     TrayIconBuilder::with_id("clipmind")
-        .tooltip("ClipMind")
+        .tooltip("ClipGuard")
         .icon(tray_icon_image())
         .menu(&menu)
         .show_menu_on_left_click(true)
@@ -2418,5 +2418,5 @@ pub fn run() {
             panic_wipe_clip
         ])
         .run(tauri::generate_context!())
-        .expect("error while running ClipMind");
+        .expect("error while running ClipGuard");
 }

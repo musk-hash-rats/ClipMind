@@ -1,6 +1,6 @@
 # Semantic Search Plan
 
-Semantic search now has a first local implementation. It uses a deterministic local hash-vector index stored encrypted in the ClipMind store. This is not a neural embedding model yet, but it provides the local encrypted index, rebuild flow, exact/semantic UI split, and locked redaction boundary needed for the product path.
+Semantic search now has a first local implementation. It uses a deterministic local hash-vector index stored encrypted in the ClipGuard store. This is not a neural embedding model yet, but it provides the local encrypted index, rebuild flow, exact/semantic UI split, and locked redaction boundary needed for the product path.
 
 ## Privacy Model
 
@@ -32,7 +32,7 @@ Semantic search now has a first local implementation. It uses a deterministic lo
 
 ## Open Decisions
 
-- Choose whether to replace `clipmind-local-hash-v1` with a local neural embedding runtime.
+- Choose whether to replace `clipguard-local-hash-v1` with a local neural embedding runtime.
 - Decide whether remote embeddings are ever allowed for non-local-only clips.
 - Define max indexed payload size for large files and screenshots.
 - Add integration tests for index rebuild, locked redaction, local-only policy, and model-version migration.

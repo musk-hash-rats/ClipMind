@@ -1,6 +1,6 @@
 # Release Readiness Audit - 2026-06-12
 
-Verdict: ClipMind is not complete end-to-end yet.
+Verdict: ClipGuard is not complete end-to-end yet.
 
 ## Passed In Local Linux Checks
 
@@ -48,4 +48,4 @@ Verdict: ClipMind is not complete end-to-end yet.
 
 ## Completion Gate
 
-Do not call ClipMind complete until native macOS/Windows validation passes or the project owner explicitly narrows the platform/release scope.
+Do not call ClipGuard complete until native macOS/Windows validation passes or the project owner explicitly narrows the platform/release scope.

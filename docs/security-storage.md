@@ -1,6 +1,6 @@
 # Security And Storage Plan
 
-ClipMind's privacy model should be treated as product infrastructure, not a later hardening pass.
+ClipGuard's privacy model should be treated as product infrastructure, not a later hardening pass.
 
 ## MVP Storage Boundary
 
@@ -12,14 +12,14 @@ Local storage responsibilities:
 - Store safe metadata separately from encrypted payloads.
 - Preserve source memory without exposing sensitive content.
 - Support expiry and burn-after-use cleanup jobs.
-- Support panic wipe for ClipMind-owned data only.
+- Support panic wipe for ClipGuard-owned data only.
 
 ## Key Management
 
 Current implementation:
 
 - Clip payloads are encrypted with an AES-256-GCM data key.
-- The data key is wrapped with a passphrase-derived Argon2id key and stored in the local ClipMind store as `wrappedDataKey`.
+- The data key is wrapped with a passphrase-derived Argon2id key and stored in the local ClipGuard store as `wrappedDataKey`.
 - The store records Argon2id KDF algorithm/version/parameter metadata so future KDF parameter migrations can be handled deliberately.
 - First unlock sets the local passphrase and migrates the previous raw key-file fallback into the wrapped-key model.
 - Passphrases must be at least 12 characters.
@@ -34,7 +34,7 @@ Remaining platform hardening:
 
 ## Recovery Policy
 
-ClipMind is local-first encrypted memory. If the passphrase is forgotten, encrypted payload recovery is not available in the current fallback model. The in-app reset flow requires typed `RESET`, clears runtime key material, removes local ClipMind store/export/key artifacts, and creates a fresh locked store. Reset does not recover payloads.
+ClipGuard is local-first encrypted memory. If the passphrase is forgotten, encrypted payload recovery is not available in the current fallback model. The in-app reset flow requires typed `RESET`, clears runtime key material, removes local ClipGuard store/export/key artifacts, and creates a fresh locked store. Reset does not recover payloads.
 
 ## Data Classes
 
@@ -49,7 +49,7 @@ Private metadata should be encrypted when it can reveal sensitive context.
 Panic wipe must:
 
 - Require confirmation.
-- Delete ClipMind-owned encrypted payloads and indexes.
+- Delete ClipGuard-owned encrypted payloads and indexes.
 - Clear active capture state.
 - Preserve no recoverable local payload copy.
 - Avoid deleting unrelated user files.

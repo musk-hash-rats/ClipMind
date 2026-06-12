@@ -1,4 +1,4 @@
-# ClipMind Threat Model
+# ClipGuard Threat Model
 
 Status: initial planning model. Update before alpha and whenever storage, capture, export, or sync behavior changes.
 
@@ -15,7 +15,7 @@ Status: initial planning model. Update before alpha and whenever storage, captur
 - Native OS clipboard APIs.
 - Tauri command boundary between TypeScript UI and Rust backend.
 - Local encrypted store.
-- Export boundary from ClipMind to agents or files.
+- Export boundary from ClipGuard to agents or files.
 - Installer/update distribution pipeline.
 
 ## Primary Risks
@@ -23,7 +23,7 @@ Status: initial planning model. Update before alpha and whenever storage, captur
 1. Sensitive clipboard data is stored without encryption.
 2. Masked clips leak through previews, logs, search indexes, or exports.
 3. Capture continues when the user believes it is paused.
-4. Panic wipe deletes unrelated user data or fails to delete ClipMind payloads.
+4. Panic wipe deletes unrelated user data or fails to delete ClipGuard payloads.
 5. Agent exports include more clips or metadata than the user selected.
 6. Source metadata reveals private browsing, file, or sender context.
 7. A malicious dependency or compromised build pipeline ships unsafe installers.

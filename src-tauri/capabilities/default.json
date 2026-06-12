@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default ClipMind desktop capability set",
+  "description": "Default ClipGuard desktop capability set",
   "windows": ["main"],
   "permissions": ["core:default"]
 }
