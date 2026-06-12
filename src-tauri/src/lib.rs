@@ -253,6 +253,11 @@ struct CapturedClipboard {
     audit_summary: String,
 }
 
+#[derive(Clone, Serialize)]
+struct CaptureNotice {
+    message: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct SemanticIndex {
     version: u32,
@@ -769,11 +774,16 @@ fn safe_file_name(file_name: &str) -> String {
         .collect::<String>()
 }
 
-fn read_supported_clipboard() -> Result<CapturedClipboard, String> {
-    let mut clipboard = Clipboard::new().map_err(|error| error.to_string())?;
+fn clipboard_error(context: &str, error: impl std::fmt::Display) -> String {
+    format!("{context}: {error}")
+}
 
-    if let Ok(text) = clipboard.get_text() {
-        if !text.trim().is_empty() {
+fn read_supported_clipboard() -> Result<CapturedClipboard, String> {
+    let mut clipboard =
+        Clipboard::new().map_err(|error| clipboard_error("Clipboard access failed", error))?;
+
+    match clipboard.get_text() {
+        Ok(text) if !text.trim().is_empty() => {
             return Ok(CapturedClipboard {
                 clip_type: "text".to_string(),
                 title: "Clipboard text".to_string(),
@@ -784,18 +794,23 @@ fn read_supported_clipboard() -> Result<CapturedClipboard, String> {
                 payload: text,
             });
         }
+        Ok(_) => {}
+        Err(_) => {}
     }
 
-    if let Ok(image) = clipboard.get_image() {
-        return Ok(CapturedClipboard {
-            clip_type: "image".to_string(),
-            title: "Clipboard image".to_string(),
-            payload: image_payload(image.width, image.height, image.bytes.as_ref()),
-            safe_preview: format!("Image {}x{}", image.width, image.height),
-            byte_size: Some(image.bytes.len()),
-            mime_type: Some("application/clipmind-rgba".to_string()),
-            audit_summary: "Captured clipboard image into encrypted local store".to_string(),
-        });
+    match clipboard.get_image() {
+        Ok(image) => {
+            return Ok(CapturedClipboard {
+                clip_type: "image".to_string(),
+                title: "Clipboard image".to_string(),
+                payload: image_payload(image.width, image.height, image.bytes.as_ref()),
+                safe_preview: format!("Image {}x{}", image.width, image.height),
+                byte_size: Some(image.bytes.len()),
+                mime_type: Some("application/clipmind-rgba".to_string()),
+                audit_summary: "Captured clipboard image into encrypted local store".to_string(),
+            });
+        }
+        Err(_) => {}
     }
 
     Err("Clipboard does not contain supported text or image data".to_string())
@@ -1323,7 +1338,7 @@ fn set_capture_state(
 }
 
 #[tauri::command]
-fn capture_clipboard_text(
+fn capture_clipboard(
     app: AppHandle,
     runtime: State<'_, Mutex<RuntimeSecrets>>,
     session_id: String,
@@ -2011,37 +2026,59 @@ fn panic_wipe_clip(
 }
 
 fn spawn_clipboard_watcher(app: AppHandle) {
-    thread::spawn(move || loop {
-        thread::sleep(Duration::from_millis(1500));
+    thread::spawn(move || {
+        let mut last_notice = String::new();
+        let mut last_notice_at = Instant::now() - Duration::from_secs(30);
 
-        let Ok(store) = load_store(&app) else {
-            continue;
-        };
-        if store.locked {
-            continue;
-        }
+        loop {
+            thread::sleep(Duration::from_millis(1500));
 
-        let Some(session) = store
-            .sessions
-            .iter()
-            .find(|session| matches!(session.capture_state, CaptureState::Active))
-            .cloned()
-        else {
-            continue;
-        };
-        let masked = session.default_privacy.masked;
-        let session_id = session.id;
-        let runtime_state = app.state::<Mutex<RuntimeSecrets>>();
-        let Ok(runtime) = runtime_state.lock() else {
-            continue;
-        };
-        let Some(data_key) = runtime.data_key else {
-            continue;
-        };
-        drop(runtime);
+            let Ok(store) = load_store(&app) else {
+                continue;
+            };
+            if store.locked {
+                continue;
+            }
 
-        if let Ok((state, true)) = capture_clipboard_payload(&app, &data_key, session_id, masked) {
-            let _ = app.emit("clipmind://state-changed", state);
+            let Some(session) = store
+                .sessions
+                .iter()
+                .find(|session| matches!(session.capture_state, CaptureState::Active))
+                .cloned()
+            else {
+                continue;
+            };
+            let masked = session.default_privacy.masked;
+            let session_id = session.id;
+            let runtime_state = app.state::<Mutex<RuntimeSecrets>>();
+            let Ok(runtime) = runtime_state.lock() else {
+                continue;
+            };
+            let Some(data_key) = runtime.data_key else {
+                continue;
+            };
+            drop(runtime);
+
+            match capture_clipboard_payload(&app, &data_key, session_id, masked) {
+                Ok((state, true)) => {
+                    last_notice.clear();
+                    let _ = app.emit("clipmind://state-changed", state);
+                }
+                Ok((_state, false)) => {}
+                Err(error) => {
+                    if error != last_notice || last_notice_at.elapsed() >= Duration::from_secs(10)
+                    {
+                        last_notice = error.clone();
+                        last_notice_at = Instant::now();
+                        let _ = app.emit(
+                            "clipmind://capture-status",
+                            CaptureNotice {
+                                message: format!("auto capture waiting: {error}"),
+                            },
+                        );
+                    }
+                }
+            }
         }
     });
 }
@@ -2368,7 +2405,7 @@ pub fn run() {
             reset_store,
             create_session,
             set_capture_state,
-            capture_clipboard_text,
+            capture_clipboard,
             import_file_clip,
             reveal_clip,
             transform_clip,

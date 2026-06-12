@@ -15,6 +15,10 @@ type NativeState = {
   authConfigured: boolean;
 };
 
+type CaptureNotice = {
+  message: string;
+};
+
 type ImagePayload = {
   kind: "image-rgba";
   width: number;
@@ -1199,7 +1203,7 @@ app.addEventListener("click", (event) => {
     void runNativeAction(
       "capturing clipboard",
       async () => {
-        const nativeState = await invokeNativeState("capture_clipboard_text", {
+        const nativeState = await invokeNativeState("capture_clipboard", {
           sessionId: state.activeSessionId,
           masked: state.settings.maskByDefault
         });
@@ -1435,6 +1439,14 @@ void listen<NativeState>("clipmind://state-changed", (event) => {
   applyNativeState(event.payload, "clipboard change captured");
 }).catch(() => {
   setState({ statusNote: "native capture listener unavailable" });
+});
+
+void listen<CaptureNotice>("clipmind://capture-status", (event) => {
+  if (state.locked || state.captureState !== "active") return;
+
+  setState({ statusNote: event.payload.message });
+}).catch(() => {
+  setState({ statusNote: "native capture status unavailable" });
 });
 
 void (async () => {

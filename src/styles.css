@@ -182,6 +182,8 @@ h2 {
   background: #eef4fb;
   border: 1px solid #c8d9ef;
   font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .primary-action {
@@ -280,9 +282,10 @@ h2 {
 .capture-bar {
   min-height: 72px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -307,6 +310,11 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1 1 300px;
+  min-width: 220px;
+}
+
+.capture-state > div {
   min-width: 0;
 }
 
@@ -336,9 +344,22 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
   color: var(--muted);
+  background: #f0f2ef;
+  border: 1px solid var(--line);
   font-weight: 750;
   white-space: nowrap;
+}
+
+.capture-bar .quiet-action {
+  flex: 1 1 132px;
+  min-width: 132px;
+  max-width: 176px;
+  padding: 6px 12px;
+  white-space: normal;
 }
 
 .switch {
@@ -853,6 +874,13 @@ h2 {
   .capture-bar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .capture-state,
+  .capture-toggle,
+  .capture-bar .quiet-action {
+    width: 100%;
+    max-width: none;
   }
 
   .clip {
