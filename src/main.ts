@@ -420,6 +420,13 @@ const fileToBase64 = async (file: File) => {
   return btoa(binary);
 };
 
+const getImportKind = (file: File): "file" | "screenshot" => {
+  const lowerName = file.name.toLowerCase();
+  const isPng = file.type === "image/png" || lowerName.endsWith(".png");
+
+  return isPng && lowerName.includes("screenshot") ? "screenshot" : "file";
+};
+
 const importFile = (file: File, importKind: "file" | "screenshot") => {
   if (isProtectedDisabled()) {
     setState({ statusNote: protectedTitle() });
@@ -842,6 +849,10 @@ const render = () => {
           <span class="brand-mark">⌘</span>
           <span>ClipMind</span>
         </div>
+        <button class="capture-toggle topbar-capture ${captureActive ? "" : "paused"}" type="button" data-action="toggle-capture" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>
+          <span>Auto Capture</span>
+          <span class="switch" aria-hidden="true"></span>
+        </button>
         <label class="search" aria-label="Search saved clips">
           <span aria-hidden="true">⌕</span>
           <input data-action="search" value="${escapeHtml(state.searchQuery)}" placeholder="Search saved clips" />
@@ -850,7 +861,6 @@ const render = () => {
           <span aria-hidden="true">●</span>
           ${escapeHtml(lockLabel)}
         </button>
-        <button class="icon-btn" type="button" title="Settings" aria-label="Settings" data-action="toggle-settings" ${disabledAttr(isBusy())}>⚙</button>
       </header>
 
       <aside class="sidebar" aria-label="Spaces">
@@ -869,16 +879,9 @@ const render = () => {
             </div>
           </div>
           <div class="capture-actions">
-            <button class="capture-toggle" type="button" data-action="toggle-capture" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>
-              <span>${captureActive ? "On" : "Off"}</span>
-              <span class="switch" aria-hidden="true"></span>
-            </button>
-            <button class="primary-action" type="button" data-action="capture-now" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Save Clipboard</button>
-            <button class="quiet-action" type="button" data-action="import-file" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Add File</button>
-            <button class="quiet-action" type="button" data-action="import-screenshot" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Add Image</button>
+            <button class="primary-action" type="button" data-action="import-file" title="${escapeHtml(actionTitle)}" ${disabledAttr(protectedDisabled)}>Import</button>
           </div>
           <input class="hidden-file-input" type="file" data-file-import="file" aria-hidden="true" tabindex="-1" />
-          <input class="hidden-file-input" type="file" accept="image/*" data-file-import="screenshot" aria-hidden="true" tabindex="-1" />
         </div>
 
         <div class="mode-row" aria-label="Clip filters">${renderFilters()}</div>
@@ -925,7 +928,6 @@ const render = () => {
           <h2>Security Log</h2>
           ${renderAuditTrail()}
         </section>
-        ${renderSettings()}
       </aside>
       ${renderModal()}
     </main>
@@ -1223,26 +1225,6 @@ app.addEventListener("click", (event) => {
     return;
   }
 
-  if (actionButton?.dataset.action === "capture-now") {
-    if (!state.activeSessionId) {
-      setState({ statusNote: "native session unavailable" });
-      return;
-    }
-
-    void runNativeAction(
-      "capturing clipboard",
-      async () => {
-        const nativeState = await invokeNativeState("capture_clipboard", {
-          sessionId: state.activeSessionId,
-          masked: state.settings.maskByDefault
-        });
-        applyNativeState(nativeState, "clipboard captured");
-      },
-      "native capture unavailable"
-    );
-    return;
-  }
-
   if (actionButton?.dataset.action === "rebuild-semantic") {
     void runNativeAction(
       "rebuilding semantic index",
@@ -1255,14 +1237,13 @@ app.addEventListener("click", (event) => {
     return;
   }
 
-  if (actionButton?.dataset.action === "import-file" || actionButton?.dataset.action === "import-screenshot") {
+  if (actionButton?.dataset.action === "import-file") {
     if (isProtectedDisabled()) {
       setState({ statusNote: protectedTitle() });
       return;
     }
 
-    const importKind = actionButton.dataset.action === "import-screenshot" ? "screenshot" : "file";
-    app.querySelector<HTMLInputElement>(`[data-file-import='${importKind}']`)?.click();
+    app.querySelector<HTMLInputElement>("[data-file-import='file']")?.click();
     return;
   }
 
@@ -1432,7 +1413,7 @@ app.addEventListener("change", (event) => {
   if (!input || !importKind || !file) return;
 
   input.value = "";
-  importFile(file, importKind === "screenshot" ? "screenshot" : "file");
+  importFile(file, getImportKind(file));
 });
 
 app.addEventListener("dragover", (event) => {
@@ -1452,7 +1433,7 @@ app.addEventListener("drop", (event) => {
     return;
   }
 
-  importFile(file, file.type.startsWith("image/") ? "screenshot" : "file");
+  importFile(file, getImportKind(file));
 });
 
 app.addEventListener("keydown", (event) => {

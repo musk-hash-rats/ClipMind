@@ -65,7 +65,7 @@ button:disabled {
 }
 
 .brand {
-  width: 196px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -310,7 +310,8 @@ h2 {
   background: #b6bdb7;
 }
 
-.capture-bar.paused .switch::after {
+.capture-bar.paused .switch::after,
+.capture-toggle.paused .switch::after {
   transform: translateX(0);
 }
 
@@ -360,12 +361,30 @@ h2 {
   white-space: nowrap;
 }
 
+.topbar-capture {
+  flex: 0 0 auto;
+  min-height: 40px;
+  color: var(--ink);
+  background: #eef8f3;
+  border-color: #bad7ca;
+}
+
+.topbar-capture.paused {
+  color: var(--muted);
+  background: #f0f2ef;
+  border-color: var(--line);
+}
+
+.topbar-capture.paused .switch {
+  background: #b6bdb7;
+}
+
 .capture-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  max-width: 520px;
+  max-width: 180px;
 }
 
 .capture-actions .primary-action,
@@ -873,9 +892,18 @@ h2 {
     width: auto;
   }
 
+  .topbar-capture {
+    order: 2;
+    flex: 1 1 auto;
+  }
+
   .search {
-    order: 3;
+    order: 4;
     flex-basis: 100%;
+  }
+
+  .status-lock {
+    order: 3;
   }
 
   .sidebar {
@@ -930,12 +958,7 @@ h2 {
   }
 
   .capture-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .capture-toggle {
-    grid-column: 1 / -1;
+    display: block;
   }
 
   .clip {
